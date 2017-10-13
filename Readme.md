@@ -66,4 +66,15 @@ python setup.py install --prefix="${HOME}"
 ```
 
 
+#### Serial to USB Communication ##
+
+[Website]
+
+
+[website]: https://pbxbook.com/other/mac-tty.html
+
+Most serial-to-USB adapters  require a driver to be installed before working on OS X.
+
+Recommended to try [Prolific PL2303](http://www.prolific.com.tw/US/ShowProduct.aspx?p_id=229&pcid=41) 
+driver  first and if that does not work try [Silicon Labs](https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers).
 
