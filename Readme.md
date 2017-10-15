@@ -53,6 +53,10 @@ sudo port install qt4-mac qt4-creator-mac py27-pyqt4 py27-pip py27-serial
 sudo pip install minimalmodbus
 ```
 
+### Homebrew
+
+... not tested
+
 
 ## Install Procedure
 
