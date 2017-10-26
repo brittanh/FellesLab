@@ -28,130 +28,137 @@ o888o    `Y8bod8P' o888oo888o `Y8bod8P' 8""888P' o888ooood8 `Y888""8o `Y8bod8P'
 
 from PyQt4.QtCore import (QTimer, pyqtProperty, pyqtSignal, pyqtSlot, QObject,
 QSize, QThread, QMetaObject, QEvent, Qt)
-from PyQt4.QtGui import QIcon, QPixmap, QFont, QMainWindow, QLabel, QWidget, QPushButton,  QHBoxLayout, QVBoxLayout, QMenuBar, QStatusBar, QAbstractButton, QDialog
+from PyQt4.QtGui import (QIcon, QImage, QPixmap, QFont, QMainWindow, QLabel,
+                        QWidget, QPushButton,  QHBoxLayout, QVBoxLayout,
+                        QAbstractButton, QDialog)
 
 
+from felleslab.gui import QFellesWidgetBaseClass
 from felleslab.equipment.solenoidvalve import SolenoidValve
 from felleslab import icons
 
 
 valve_closed = ":icons/valves/48x48_solenoid_closed.png"
-valve_open = ":icons/valves/48x48_solenoid_open.png"
-valve_void = ":icons/valves/48x48_solenoid.png"
+valve_open   = ":icons/valves/48x48_solenoid_open.png"
+valve_void   = ":icons/valves/48x48_solenoid.png"
 
 
 # Valve Widget -------------------------------------------------------------- #
-class QFellesSolenoidValve(QWidget):
+class QFellesSolenoidValve(QFellesWidgetBaseClass):
     """
     @brief     Widget
     """
-
-    valveOpen = pyqtSignal(name="openValve")
+    valveOpen  = pyqtSignal(name="openValve")
     valveClose = pyqtSignal(name="closeValve")
 
-    def __init__(self, parent=None):
-        super(QFellesSolenoidValve, self).__init__(parent)
+    ICONS = [ valve_open, valve_closed, valve_void ]
 
-        self.ICONS = [ QPixmap(valve_closed), QPixmap(valve_open), QPixmap(valve_void) ]
+    meta = { "type": "Position",
+             "name": "Valve",
+             "unit": "[-]",
+             "channel" : 0,
+             "portname" : "/dev/ttyUSB0",
+             "slaveaddress": 1,
+             "baudrate" : 19200,
+            }
 
-        self.meta = { "type": "Position",
-                 "name": "Valve",
-                 "unit": "[-]",
-                 "channel" : 0,
-                 "portname" : "/dev/ttyUSB0",
-                 "slaveaddress": 1,
-                 "baudrate" : 19200,
-                }
+    _state        = -1 # <-- set-point
+    _initialState =  0 # <-- initial set-point
+    _finalState   =  0 # <-- final set-point
 
-        self._state = -1 # <-- set-point
-        self._initialState = 0 # <-- initial set-point
-        self._finalState = 0 # <-- final set-point
-
-        self.initUi(parent)
-        if parent:
-            self.initSlaves()
-
-
-        #self.valveOpen.connect()
-
-        # Display Widget in User Interface
-        self.show()
+    _slave = SolenoidValve
 
     def initUi(self, parent=None):
         """ Generates the user interface """
         self.label = QLabel(parent)
         self.label.setObjectName("Solenoid Valve")
-        self.label.setPixmap(self.ICONS[self.state])
+        self.label.setPixmap(QPixmap(self.ICONS[self._state]))
 
         _layout = QHBoxLayout()
         _layout.addWidget(self.label)
         self.setLayout(_layout)
 
-    def isOpen(self):
-        self.state = 0
+        self.valveClose.connect(self.closeValve)
+        self.valveOpen.connect(self.openValve)
 
-    def isClosed(self):
-        self.state = 1
+    @pyqtProperty(int)
+    def initialState(self):
+        return self.slave.state
 
-    @pyqtSlot()
-    def setOpen(self):
-        self.slave.event_queue.append((self.slave.setOpen, self.isOpen))
+    @initialState.setter
+    def initialState(self, value):
+        self._initialState = value
 
-    @pyqtSlot()
-    def setClose(self):
-        self.slave.event_queue.append((self.slave.setClose, self.isClosed))
-
-    @pyqtSlot()
-    def setSwitchState(self):
-        if self.state == 0:
-            self.slave.event_queue.append((self.slave.setClose, self.isClosed))
-        else:
-            self.slave.event_queue.append((self.slave.setOpen, self.isOpen))
-
-    @pyqtProperty(bool)
-    def openOnInit(self):
-        return self._initialState
-
-    @openOnInit.setter
-    def openOnInit(self, openOnInit):
-        self._initialState = 0 if openOnInit else 1
-
-    @pyqtProperty(bool)
-    def openOnQuit(self):
+    @pyqtProperty(int)
+    def finalState(self):
         return self._finalState
 
-    @openOnQuit.setter
-    def openOnQuit(self,openOnQuit):
-        self._finalState = 0 if openOnQuit else 1
+    @finalState.setter
+    def finalState(self, value):
+        self._finalState = value
 
     @property
     def state(self):
-        return self._state
+        return self.slave.state
 
     @state.setter
     def state(self, value):
-        self._state = value
+        self.slave.state = value
         self.paintEvent()
+
+    def onInit(self):
+        if self._initialState == 0:
+            self.setOpen()
+        else:
+            self.setClose()
+
+    def isOpen(self):
+        return self.state == 0
+
+    def isClosed(self):
+        return self.state == 1
+
+    def closeValve(self):
+        self.slave.setClose()
+        self.isClosed()
+
+    def openValve(self):
+        self.slave.setOpen()
+        self.isOpen()
+
+    @pyqtSlot()
+    def setSample(self):
+        self.newSample.emit(str(self.state))
+
+    @pyqtSlot()
+    def setOpen(self):
+        self.events.append(self.valveOpen)
+
+    @pyqtSlot()
+    def setClose(self):
+        self.events.append(self.valveClose)
+
+    @pyqtSlot()
+    def setSwitchState(self):
+        if self.isOpen():
+            self.events.append(self.valveClose)
+        else:
+            self.events.append(self.valveOpen)
 
     def mouseReleaseEvent(self, event):
         self.setSwitchState()
 
     def retranslateUi(self, parent):
-        self.label.setPixmap(self.ICONS[self.state])
-
-    def initSlaves(self):
-        self.slave = SolenoidValve(**self.meta)
-        self.state = 1
+        self.label.setPixmap(QPixmap(self.ICONS[self.state]))
 
     def paintEvent(self, event=None, *args):
-        self.label.setPixmap(self.ICONS[self.state])
+        self.label.setPixmap(QPixmap(self.ICONS[self.state]))
 
     def setProperty(self, key, val):
         self.meta[key] = val
 
     def closeEvent(self, event):
-        self.slave.event_queue.append((self.slave.onQuit, None))
-
+        self.events.append(self.slave.onQuit)
 
 # ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: #
 if __name__ == '__main__':

@@ -28,7 +28,6 @@ import weakref
 class SolenoidValve(Adam4069):
     """
     """
-    event_queue = [] # ( event, reply )
 
     meta = { "type": "Position",
              "name": "Top",
@@ -47,21 +46,17 @@ class SolenoidValve(Adam4069):
         if "unit" not in kwargs:
             kwargs["unit"] = "--"
 
+        self._state = -1
         self.__dict__.update(**kwargs)
-        self.create_buffer()
         super(SolenoidValve, self).__init__(portname, slaveaddress, channel)
 
     @property
-    def baudrate(self):
-        return self.serial.baudrate
+    def state(self):
+        return self._state
 
-    @baudrate.setter
-    def baudrate(self, val):
-        self.serial.baudrate = val
-
-    def create_buffer(self, timespan=60):
-        length = int(timespan/0.1)
-        self._buffer = { 'Time': deque() , 'Position': deque() }
+    @state.setter
+    def state(self, value):
+        self._state = value
 
     def set_digital_out(self, value):
         return super(SolenoidValve, self).set_digital_out(self.channel, value)
@@ -69,48 +64,21 @@ class SolenoidValve(Adam4069):
     def get_digital_out(self):
         return super(SolenoidValve, self).get_digital_out(self.channel)
 
-    def sample(self, time, *args, **kwargs):
-        raw = self.get_digital_out()
-        self['Position'].append(raw)
-        self['Time'].append(time)
-        return { 'Position': raw }
-
     def setOpen(self):
         self.set_digital_out(0)
+        self._state = 0
 
     def setClose(self):
         self.set_digital_out(1)
+        self._state = 1
 
     def getState(self):
-        return self.get_digital_out()
+        self.state = self.get_digital_out()
+        return self.state
 
     def onInit(self):
         print("Initialising solenoid valve")
-        #self.writeOn()
-
-    def onEvent(self):
-        """ Iterate over all events """
-        while self.event_queue:
-            event, reply = self.event_queue.pop(0)
-            ret = event()
-            if not reply:
-                continue
-            reply()
-
-    def onQuit(self):
-        print("Shutting down solenoid valve")
-        #self.writeOff()
-
-    @classmethod
-    def resetAll(cls):
-        for adaptor in cls.___refs___:
-          for key in adaptor._buffer.iterkeys():
-            adaptor[key].clear()
-
-    def __del__(self):
-        print("")
-        print("Bye bye")
-        print("")
+        self.writeOn()
 
 # ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: #
 if __name__ == '__main__':
@@ -120,9 +88,9 @@ if __name__ == '__main__':
     from Queue import Queue
     from collections import defaultdict, deque
 
-
     class SerialportThread(Thread):
-        """ Thread sampling values from ONE serial port """
+        """ Thread sampling values from ONE serial port
+        """
 
         RATE = 0.1
         SAVE = True # Event()

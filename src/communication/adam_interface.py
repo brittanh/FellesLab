@@ -183,12 +183,10 @@ class MyRef(weakref.ref):
         ----------------------------------------------------------------------
     """
 
-    # ------------------------------- Method -------------------------------- #
     def __init__(self, referee, callback=None):
         self.referee = referee
         super(MyRef, self).__init__(referee, callback)
 
-    # ------------------------------- Method -------------------------------- #
     def __call__(self):
         """
         Magic method.
@@ -232,16 +230,8 @@ class AdaptorBaseClass(object):
         self.portname = self.serial.port
         self.slaveaddress = slaveaddress
 
-        if not self.exists():
-            AdaptorBaseClass.___refs___.append(MyRef(self))
-
-    def exists(self):
-        for adaptor in self.___refs___:
-            if adaptor() == self:
-                print("Port '%s', address '%d' already exists" %(self.portname, self.slaveaddress))
-
     def __str__(self):
-        return "<type %s at >" %(type(self))
+        return "<type %s at %s>" %(type(self), hex(self._id))
 
     @abstractmethod
     def __repr__(self):
@@ -256,18 +246,18 @@ class AdaptorBaseClass(object):
 
     @classmethod
     def getPorts(cls):
-        return set( [ adaptor().portname for adaptor in cls.___refs___] ) 
+        return set( [ adaptor.portname for adaptor in cls.___refs___] ) 
 
 
     @classmethod
     def getAdaptors(cls, portname):
-        return [ a for a in cls.___refs___ if a().portname == portname ]
+        return [ a for a in cls.___refs___ if a.portname == portname ]
 
     @classmethod
     def findAdaptor(cls, _id):
-        return [ a() for a in cls.___refs___ if a()._id == _id ]        
+        return [ a for a in cls.___refs___ if a._id == _id ]        
 
-
+# --------------------------------------------------------------------------- #
 class AdamAdaptorBase(AdaptorBaseClass):
     """
     """

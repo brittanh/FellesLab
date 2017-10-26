@@ -21,5 +21,5 @@ o888o    `Y8bod8P' o888oo888o `Y8bod8P' 8""888P' o888ooood8 `Y888""8o `Y8bod8P'
 import equipment
 import qt_widgets
 import icons
-from gui import run_gui, QFellesDialog
+from gui import run_gui
 
