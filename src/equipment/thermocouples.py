@@ -65,7 +65,7 @@ class ThermocoupleBase(Adam4019P):
         self._sample_raw = int
         self._sample     = float
 
-        super(ThermocoupleBaseClass, self).__init__(portname, slaveaddress, channel)
+        super(ThermocoupleBase, self).__init__(portname, slaveaddress, channel)
 
     @property
     def port(self):
@@ -95,27 +95,17 @@ class ThermocoupleBase(Adam4019P):
         length = int(timespan/0.1)
         self._buffer = { 'Time': deque() , 'Temperature': deque() }
 
-    def sample(self, time, callback = None):
-        try:
-          temp = self.get_analog_in()          
-          self['Temperature'].append(temp)
-          self['Time'].append(time)
-          return { 'Temperature': temp }
-        except:
-          pass
-
     def get_analog_in(self):
-        return super(ThermocoupleBaseClass, self).get_analog_in(self.channel)
+        return super(ThermocoupleBase, self).get_analog_in(self.channel)
 
     @property
     def raw_meassurement(self):
-        raw_meassurement = get_analog_in()
+        raw_meassurement = self.get_analog_in()
         return self._raw
-
 
     @raw_meassurement.setter
     def raw_meassurement(self):
-        self._raw = get_analog_in()
+        self._raw = self.get_analog_in()
 
     @classmethod
     def resetAll(cls):
@@ -123,36 +113,8 @@ class ThermocoupleBase(Adam4019P):
           for key in adaptor._buffer.iterkeys():
             adaptor[key].clear()
 
-
-
-class ThermocoupleBaseClass(Adam4019P):
-
-    def __init__(self, portname, slaveaddress, channel, **kwargs):
-        super(ThermocoupleBaseClass, self).__init__(portname, slaveaddress, channel)
-
-    @property
-    def port(self):
-        return self.serial.port
-
-    @port.setter
-    def port(self, portname):
-        self.serial.port = portname
-
-    @property
-    def baudrate(self):
-        return self.serial.baudrate
-
-    @baudrate.setter
-    def baudrate(self, val):
-        self.serial.baudrate = val
-
-    def get_analog_in(self):
-        return super(ThermocoupleBaseClass, self).get_analog_in(self.channel)
-
-
-
 # Define Children ----------------------------------------------------------- #
-class JType(ThermocoupleBaseClass):
+class JType(ThermocoupleBase):
 
     def get_raw_measurement(self):
         return super(JType, self).get_analog_in()
@@ -162,7 +124,7 @@ class JType(ThermocoupleBaseClass):
         return self.get_raw_measurement()
 
 
-class KType(ThermocoupleBaseClass):
+class KType(ThermocoupleBase):
 
     def get_raw_measurement(self):
         return super(KType, self).get_analog_in()
@@ -172,7 +134,7 @@ class KType(ThermocoupleBaseClass):
         return self.get_raw_measurement()
 
 
-class TType(ThermocoupleBaseClass):
+class TType(ThermocoupleBase):
 
     def get_raw_measurement(self):
         return super(TType, self).get_analog_in()

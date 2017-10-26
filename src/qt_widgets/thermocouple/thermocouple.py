@@ -10,7 +10,7 @@ oooooooooooo       oooo oooo                    ooooo                 .o8
 o888o     `Y8bod8P'o888oo888o`Y8bod8P'8""888P'  o888ooooood8`Y888""8o `Y8bod8P'
 
 @summary
-@author:       Sigve Karolius
+@author        Sigve Karolius
 @organization  Department of Chemical Engineering, NTNU, Norway
 @contact       sigve.karolius@ntnu.no
 @license       Free (GPL.v3) !!! Distributed as-is !!!
@@ -40,32 +40,22 @@ from time import time
 
 
 # Thermocouple Widget ------------------------------------------------------- #
-class QFellesThermocouple(QWidget):
+class QFellesThermocouple(QFellesWidgetBaseClass):
     """
     @brief     Widget
     """
-    measurement_updated = pyqtSignal(str)
+    newSample = pyqtSignal(str)
 
-    def __init__(self, parent=None):
-        """
-        parent is "None" when initialised by QtDesigner
-        """
+    meta = { "type": "Temperature",
+             "name": "Top",
+             "unit": "[C]",
+             "channel" : 0,
+             "portname" : "/dev/ttyUSB0",
+             "slaveaddress": 1,
+             "baudrate" : 19200,
+    }
+    _slave = JType
 
-        super(QFellesThermocouple, self).__init__(parent)
-
-        self.initUi(parent)
-
-        self.meta = { "type": "Temperature",
-                 "name": "Top",
-                 "unit": "[C]",
-                 "channel" : 0,
-                 "portname" : "/dev/ttyUSB0",
-                 "slaveaddress": 1,
-                 "baudrate" : 19200,
-        }
-
-        # Display Widget in User Interface
-        self.show()
 
     def initUi(self, parent=None):
         """ Generates the user interface """
@@ -74,57 +64,28 @@ class QFellesThermocouple(QWidget):
         self.label.setObjectName("JTypeThermocouple")
         self.label.setPixmap(QPixmap(":icons/thermocouples/16x16_thumbnail.png"))
 
-        _layout = QHBoxLayout()  #whatever layout you want
+        _layout = QHBoxLayout()  # whatever layout you want
         _layout.addWidget(self.label)
 
         self.setLayout(_layout)
-
-    def mousePressEvent(self, event):
-        if event.button() == Qt.RightButton:
-            dg = QFellesDialog(self)
-            dg.show()
 
     def paintEvent(self, event=None, *args):
         pass
 
     def closeEvent(self, event):
-      print("Closing Thermocouple")
+        print("Closing Thermocouple")
 
     @pyqtSlot()
-    def sampleEvent(self, event=None):
-      """ Called to update widget in GUI """
-      try :
-            self.slave.self.get_analog_in()
-      except :
-            self.sample_failed("asdf").emit()
+    def setSample(self, event=None):
+        """ Called to update widget in GUI
+        """
+        sample = self.slave.get_analog_in()
+        self.newSample.emit(str(sample))
 
-    @pyqtProperty(str)
-    def portname(self):
-        return self.meta["portname"]
-
-    @portname.setter
-    def baudrate(self, string):
-        self.meta["portname"] = string
-
-    @pyqtProperty(int)
-    def channel(self):
-        return self.meta["channel"]
-
-    @channel.setter
-    def baudrate(self, string):
-        self.meta["channel"] = string
-
-    @pyqtProperty(int)
-    def baudrate(self):
-        return self.meta["baudrate"]
-
-    @baudrate.setter
-    def baudrate(self, string):
-        self.meta["baudrate"] = string
-
-    @pyqtSlot()
-    def initSlaves(self):
-        self.slave = JType(**self.meta)
+#def mousePressEvent(self, event):
+#    if event.button() == Qt.RightButton:
+#        dg = QFellesDialog(self)
+#        dg.show()
 
 
 # ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: #

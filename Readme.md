@@ -33,9 +33,25 @@ Yb,         ,dP 88    888   .o 88  88 888   .oo.  )88b  88    od8(  88 888  888
              \/                                                \/
 ```
 
+
+# About
+
+The framework is based on [PyQt][PyQt reference].
+
+
+[PyQt reference]: http://pyqt.sourceforge.net/Docs/PyQt4/
+
+```bash
+export PYQTDESIGNERPATH="<path>"
+```
+
+
 # Install
 
+
 ## Dependencies
+
+
 
 ### Ubuntu (Linux)
 
