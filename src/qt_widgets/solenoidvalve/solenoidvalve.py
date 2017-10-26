@@ -46,7 +46,7 @@ valve_void   = ":icons/valves/48x48_solenoid.png"
 # Valve Widget -------------------------------------------------------------- #
 class QFellesSolenoidValve(QFellesWidgetBaseClass):
     """
-    @brief     Widget
+    @brief     Widget representing a sol
     """
     valveOpen  = pyqtSignal(name="openValve")
     valveClose = pyqtSignal(name="closeValve")
@@ -62,11 +62,10 @@ class QFellesSolenoidValve(QFellesWidgetBaseClass):
              "baudrate" : 19200,
             }
 
-    _state        = -1 # <-- set-point
-    _initialState =  0 # <-- initial set-point
-    _finalState   =  0 # <-- final set-point
-
-    _slave = SolenoidValve
+    _state        = -1                                          # <-- set-point
+    _initialState =  0                                      # initial set-point
+    _finalState   =  0                                     # terminal set-point
+    _slave        = SolenoidValve
 
     def initUi(self, parent=None):
         """ Generates the user interface """
@@ -83,7 +82,7 @@ class QFellesSolenoidValve(QFellesWidgetBaseClass):
 
     @pyqtProperty(int)
     def initialState(self):
-        return self.slave.state
+        return self._initialState
 
     @initialState.setter
     def initialState(self, value):
@@ -99,7 +98,7 @@ class QFellesSolenoidValve(QFellesWidgetBaseClass):
 
     @property
     def state(self):
-        return self.slave.state
+        return self.slave.state if self.slave else -1
 
     @state.setter
     def state(self, value):
@@ -108,6 +107,12 @@ class QFellesSolenoidValve(QFellesWidgetBaseClass):
 
     def onInit(self):
         if self._initialState == 0:
+            self.setOpen()
+        else:
+            self.setClose()
+
+    def onQuit(self):
+        if self._finalState == 0:
             self.setOpen()
         else:
             self.setClose()
@@ -127,8 +132,12 @@ class QFellesSolenoidValve(QFellesWidgetBaseClass):
         self.isOpen()
 
     @pyqtSlot()
-    def setSample(self):
-        self.newSample.emit(str(self.state))
+    def setSample(self, event=None):
+        """ Called to update widget in GUI
+        """
+        sample = self.slave.getState()
+        self.history.append(sample)
+        self.newSample.emit(str(sample))
 
     @pyqtSlot()
     def setOpen(self):
@@ -154,11 +163,9 @@ class QFellesSolenoidValve(QFellesWidgetBaseClass):
     def paintEvent(self, event=None, *args):
         self.label.setPixmap(QPixmap(self.ICONS[self.state]))
 
-    def setProperty(self, key, val):
-        self.meta[key] = val
-
-    def closeEvent(self, event):
-        self.events.append(self.slave.onQuit)
+    def closeEvent(self, event=None):
+        print("Shutting down %s" %self.__class__.__name__)
+        self.events.append(self.onQuit)
 
 # ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: #
 if __name__ == '__main__':

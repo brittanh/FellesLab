@@ -56,7 +56,6 @@ class QFellesThermocouple(QFellesWidgetBaseClass):
     }
     _slave = JType
 
-
     def initUi(self, parent=None):
         """ Generates the user interface """
 
@@ -69,24 +68,16 @@ class QFellesThermocouple(QFellesWidgetBaseClass):
 
         self.setLayout(_layout)
 
-    def paintEvent(self, event=None, *args):
-        pass
-
-    def closeEvent(self, event):
-        print("Closing Thermocouple")
+    def closeEvent(self, event=None):
+        print("Shutting down %s" %self.__class__.__name__)
 
     @pyqtSlot()
     def setSample(self, event=None):
         """ Called to update widget in GUI
         """
         sample = self.slave.get_analog_in()
+        self.history.append(sample)
         self.newSample.emit(str(sample))
-
-#def mousePressEvent(self, event):
-#    if event.button() == Qt.RightButton:
-#        dg = QFellesDialog(self)
-#        dg.show()
-
 
 # ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: #
 if __name__ == '__main__':

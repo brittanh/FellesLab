@@ -43,16 +43,14 @@ def t_type_conversion(wrapped):
 
 # Define Base Class --------------------------------------------------------- #
 class ThermocoupleBase(Adam4019P):
-    meta = { "type": "Temperature",
-             "name": "Top",
-             "unit": "[C]",
-             "channel" : 0,
-             "portname" : "--",
-             "slaveaddress": "--"
-            }
+    """
+    """
+
+    _state_raw = int
+    _state     = float
+    _setpoint  = float
 
     def __init__(self, portname, slaveaddress, channel, **kwargs):
-
         if "type" not in kwargs:
             kwargs["type"] = self.__class__.__name__
         if "name" not in kwargs:
@@ -60,58 +58,21 @@ class ThermocoupleBase(Adam4019P):
         if "unit" not in kwargs:
             kwargs["unit"] = "--"
         self.__dict__.update(**kwargs)
-        self.create_buffer()
-
-        self._sample_raw = int
-        self._sample     = float
 
         super(ThermocoupleBase, self).__init__(portname, slaveaddress, channel)
 
     @property
-    def port(self):
-        return self.serial.port
-
-    @port.setter
-    def port(self, portname):
-        self.serial.port = portname
-
-    @property
-    def baudrate(self):
-        return self.serial.baudrate
-
-    @baudrate.setter
-    def baudrate(self, val):
-        self.serial.baudrate = val
-
-    @property
-    def register(self):
-        return self.channel
-
-    @register.setter
-    def baudrate(self, val):
-        self.register = val
-
-    def create_buffer(self, timespan=60):
-        length = int(timespan/0.1)
-        self._buffer = { 'Time': deque() , 'Temperature': deque() }
-
-    def get_analog_in(self):
-        return super(ThermocoupleBase, self).get_analog_in(self.channel)
-
-    @property
     def raw_meassurement(self):
-        raw_meassurement = self.get_analog_in()
+        self._raw = super(ThermocoupleBase, self).get_analog_in(self.channel)
         return self._raw
 
     @raw_meassurement.setter
     def raw_meassurement(self):
         self._raw = self.get_analog_in()
 
-    @classmethod
-    def resetAll(cls):
-        for adaptor in cls.___refs___:
-          for key in adaptor._buffer.iterkeys():
-            adaptor[key].clear()
+    def get_analog_in(self):
+        return super(ThermocoupleBase, self).get_analog_in(self.channel)
+
 
 # Define Children ----------------------------------------------------------- #
 class JType(ThermocoupleBase):

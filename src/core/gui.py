@@ -56,15 +56,16 @@ class QFellesWidgetBaseClass(QWidget):
     newSample = pyqtSignal(str)
     getSample = pyqtSignal(float, name="PerformSampling")
 
-    meta = { "type": "Dummy",
-             "name": "Top",
-             "unit": "[C]",
-             "channel" : 0,
-             "portname" : "/dev/ttyUSB0",
-             "slaveaddress": 1,
-             "baudrate" : 19200,
+    meta = { "type"         : None,
+             "name"         : None,
+             "unit"         : None,
+             "channel"      : None,                # Register used for sampling
+             "portname"     : "/dev/ttyUSB0",     # Computer communication port
+             "slaveaddress" : 0,              # Address in the physical network
+             "baudrate"     : 19200,                      # Communication speed
     }
-    _slave = None
+
+    _slave        = None                                      # Slave unit type
 
     ___refs___ = []
     ___ports___ = defaultdict(list)
@@ -76,9 +77,19 @@ class QFellesWidgetBaseClass(QWidget):
         self.__class__.___refs___.append(self)
         self._id = hex(id(self))
         self.events = [ ]
+        self._history = deque(maxlen=100)
 
+        #                  !! Hack Warning !!
+        # The following "if statements" are a "hack" to ensure the widgets
+        # do not throw errors when used in QtDesigner. The problem is that
+        # it is "my" MainWindow (FellesGui) that contains the signals for
+        # initialisation and terminating the felles widgets.
         if parent:
-            parent.parent().initialiseSlaves.connect(self.setSlave)
+            if type(parent.parent()) == FellesGui:
+                parent.parent().initialiseSlaves.connect(self.setSlave)
+                parent.parent().closing.connect(self.closeEvent)
+            else:
+                self._slave = None
 
         self.initUi(parent)                         # Initialise user interface
         self.show()                          # Display Widget in User Interface
@@ -89,8 +100,26 @@ class QFellesWidgetBaseClass(QWidget):
         """
         raise NotImplementedError("You idiot...")
 
+    def onInit(self):
+        pass
+
+    def onQuit(self):
+        pass
+
     def closeEvent(self, event=None):
         print("- - - -")
+
+    def onEvent(self):
+        for event in self.events:
+            event.emit()
+
+    @pyqtProperty(list)
+    def history(self):
+        return self._history
+
+    @history.setter
+    def history(self, val):
+        self._history.append(val)
 
     @pyqtSlot(str, int)
     def setSlave(self, portname=None, slaveaddress=None):
@@ -104,16 +133,9 @@ class QFellesWidgetBaseClass(QWidget):
             self.getSample.connect(self.setSample)
             self.onInit()
 
-    def onInit(self):
-        pass
-
     @pyqtSlot()
     def setSample(self):
         raise NotImplementedError("You idiot...")
-
-    def onEvent(self):
-        for event in self.events:
-            event.emit()
 
     @pyqtProperty(str)
     def portname(self):
@@ -234,11 +256,11 @@ class FellesGui(QMainWindow):
 
         self.setAttribute(Qt.WA_DeleteOnClose)
 
-        exitAction = QAction('Quit', self)
-        exitAction.setShortcut('Ctrl+Q')
-        exitAction.setStatusTip('Quit application')
+        self.exitAction = QAction('Quit', self)
+        self.exitAction.setShortcut('Ctrl+Q')
+        self.exitAction.setStatusTip('Quit application')
         print("Push 'Ctrl+Q' to quit the application")
-        exitAction.triggered.connect(self.close)
+        self.exitAction.triggered.connect(self.close)
 
         # Create Widget for the purpose of updating the widgets periodically
         #self.timer = QTimer()
@@ -249,8 +271,8 @@ class FellesGui(QMainWindow):
         self.buildUi(Ui_MainWindow)
 
         # --> Setup the Menu Bar
-        fileMenu = self.menuBar().addMenu('&File')
-        fileMenu.addAction(exitAction)
+        self.fileMenu = self.menuBar().addMenu('&File')
+        self.fileMenu.addAction(self.exitAction)
 
         # --> Order widgets to connect to their slaves
         self.initialiseSlaves.emit()
@@ -275,6 +297,7 @@ class FellesGui(QMainWindow):
                                    QMessageBox.Yes, QMessageBox.No)
 
         if reply == QMessageBox.Yes:
+            self.closing.emit()
             event.accept()
         else:
             event.ignore()
