@@ -57,7 +57,7 @@ sudo pip install minimalmodbus
 
 ... not tested
 
-#### Serial to USB Communication ##
+#### Serial to USB Communication 
 
 [Website]
 
@@ -77,4 +77,19 @@ python setup.py build
 python setup.py install --prefix="${HOME}"
 ```
 
+## Further Instructions 
 
+You need to add the module to your Python path before it can be imported into Python:
+
+```
+export PYTHONPATH=${HOME}/lib/python2.7/site-packages/
+```
+
+If you wish to make changes to the GUI using the custom icons, you must add the plugins to the Qt Designer path:
+
+```
+export PYQTDESIGNERPATH=${PYTHONPATH}/felleslab/qt_plugins
+```
+This will import the custom icons into the Qt Designer for use.
+
+The new GUI must then be translated into Python code using ```py4uic``` before it can be used.
