@@ -22,6 +22,8 @@ o888o    `Y8bod8P' o888oo888o `Y8bod8P' 8""888P' o888ooood8 `Y888""8o `Y8bod8P'
 from felleslab.communication import Adam4019P
 from collections import deque
 
+from serial import SerialException
+
 # Define Decorator Functions ------------------------------------------------ #
 def j_type_conversion(wrapped):
     """ Decorator performing the conversion from bit value
@@ -52,8 +54,16 @@ class ThermocoupleBase(Adam4019P):
     _setpoint  = float
 
     def __init__(self, portname, slaveaddress, channel, **kwargs):
-
         super(ThermocoupleBase, self).__init__(portname, slaveaddress, channel)
+
+    @property
+    def state(self):
+        try:
+          ret = self.get_analog_in()
+        except SerialException:
+          print("Temperature measurement failed")
+          ret = "NA"
+        return ret
 
     @property
     def raw_meassurement(self):
@@ -95,153 +105,6 @@ class TType(ThermocoupleBase):
     def get_analog_in(self):
         return self.get_raw_measurement()
 
-# ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: #
-if __name__ == '__main__':
-
-    from threading import Thread, Lock, Event, activeCount, local
-    from Queue import Queue
-    from collections import defaultdict, deque
-
-
-    class SerialportThread(Thread):
-        """ Thread sampling values from ONE serial port """
-
-        RATE = 0.1
-        SAVE = True # Event()
-
-        ___refs___ = []
-
-        def __init__ (self, portname):
-            super(SerialportThread, self).__init__()
-
-            self.slaves = AdaptorBaseClass.getAdaptors(portname)
-            self.portname = portname
-            self.daemon = True                          # Use a daemonic thread
-
-            self._data = defaultdict(dict)
-            self.events = []
-
-            self.started = time()                              # Set Start time
-            self.___refs___.append(self)
-
-            self.start()                                         # Start Thread
-
-        def __setitem__(self, key, val):
-            if not key in self._data:
-                self._data[key] = val
-            else:
-                self._data[key].update(val)
-
-        def __getitem__(self, key):
-            return self._data[key]
-
-        def sample_loop(self, timestamp, save, *args, **kwargs):
-            """
-            @brief     Loop over all slaves obtaining MVs
-            """
-
-            for slave in self.slaves:
-                try:
-                    #if self.__class__.SAVE.is_set():
-                    #if SerialportThread.SAVE:
-                    self[timestamp] = slave.sample(timestamp)
-                    #else:
-                    #    slave.sample(timestamp, savedata)
-                except IOError as e:
-                    print("Failed to read measurement:\n\t\t\t\t %s" %(e))
-                except SerialException as e:
-                    print("Serial Exception")
-                    print(e)
-                    raise e
-                except ValueError as e:
-                    print("Value Error")
-                    print(e)
-                    raise e
-                except Exception as e:
-                    print("Exception")
-                    print(e)
-                    raise e
-
-        def run(self):
-            """
-            @brief Method performing the sampling (executed by `self.start()`).
-            """
-            while True:
-                self.dt = time() - self.started
-                self.sample_loop(self.dt, self.__class__.SAVE)         # Sample
-                sleep(RATE)                             # Put Thread "to sleep"
-
-        @classmethod
-        def set_event(self, adaptor, action, destination):
-            self.events.append((adaptor, action))
-
-        @classmethod
-        def save_sampling(cls):
-            #from csv import DictWriter
-            #cls.SAVE.clear()
-            cls.SAVE = False
-            for thread in cls.___refs___:
-                print(thread._data)
-
-        @classmethod
-        def start_sampling(cls):
-            cls.SAVE = True
-
-        @classmethod
-        def pause_sampling(cls):
-            cls.SAVE = False
-
-        @classmethod
-        def reset_sampling(cls):
-            """ """
-            #cls.SAVE.clear()
-            cls.SAVE = True
-            for thread in cls.___refs___:
-                for slave in thread.slaves:
-                    slave._buffer.clear()
-                thread._data.clear()
-                thread.started = time()
-
-    def ports():
-        return Thermocouple.getPorts()
-
-    def initialize_sampling():
-        return [ SerialportThread(port) for port in ports() ]
-
-    def start():
-        print("Sampling Started")
-        SerialportThread.start_sampling()
-
-    def pause():
-        print("Sampling Paused")
-        SerialportThread.pause_sampling()
-
-    def save():
-        print("Sampling Stopped and Saved")
-        SerialportThread.save_sampling()
-
-    def reset():
-        print("Sampling Stopped and Deleted")
-        SerialportThread.reset_sampling()
-
-    test_adaptor = Thermocouple(
-                 portname='/dev/ttyUSB0',
-                 slaveaddress=2,
-                 channel=0,
-                 type= "Temperature",
-                 name = "Top",
-                 unit = "[C]",
-               )
-
-    threads = initialize_sampling()
-      
-    save()
-    pause()
-    raw_input()
-    start()
-    save()
-    reset()
-    save()
 
 # Vim 'modelines' (Vim will read 5 by default) ------------------------------- #
 # vim: filetype=python fileencoding=ascii syntax=on colorcolumn=80

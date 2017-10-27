@@ -32,6 +32,8 @@ from PyQt4.QtGui import (QIcon, QPixmap, QFont, QMainWindow, QLabel, QWidget,
 QPushButton,  QHBoxLayout, QVBoxLayout, QMenuBar, QStatusBar, QAbstractButton,
 QDialog)
 
+from serial import SerialException
+
 from felleslab.core import QFellesWidgetBaseClass
 from felleslab.equipment import JType, KType, TType
 from felleslab import icons
@@ -46,7 +48,7 @@ class QFellesThermocouple(QFellesWidgetBaseClass):
     """
     newSample = pyqtSignal(str)
     _slave = TType
-    _types = {"T": TType, "J": JType, "K". KType }
+    _types = {"T": TType, "J": JType, "K": KType }
 
     def initUi(self, parent=None):
         """ Generates the user interface """
@@ -74,7 +76,16 @@ class QFellesThermocouple(QFellesWidgetBaseClass):
     def setSample(self, event=None):
         """ Called to update widget in GUI
         """
-        sample = self.slave.get_analog_in()
+        try:
+            sample = self.slave.get_analog_in()
+        except IOError:
+            print("IOError, Temperature measurement (there is still hope)")
+            print("\tport: %s, address: %d, channel: %d" %(self.portname, self.slaveaddress,self.channel))
+            sample = -1
+        except SerialException as e:
+            print("Temperature measurement failed IOError (all hope is lost)")
+            raise e
+
         self.history.append(sample)
         self.newSample.emit(str(sample))
 

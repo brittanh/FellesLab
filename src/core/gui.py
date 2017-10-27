@@ -55,6 +55,7 @@ class QFellesWidgetBaseClass(QWidget):
 
     newSample = pyqtSignal(str)
     getSample = pyqtSignal(float, name="PerformSampling")
+    statusMessage = pyqtSignal(str)
 
     meta = { "type"         : None,
              "name"         : None,
@@ -85,12 +86,6 @@ class QFellesWidgetBaseClass(QWidget):
         # not throw errors when used in QtDesigner. The problem is that it is
         # "my" MainWindow (FellesGui) that contains the signals for
         # initialisation and terminating the felles widgets.
-        if parent:
-            if type(parent.parent()) == FellesGui:
-                parent.parent().initialiseSlaves.connect(self.setSlave)
-                parent.parent().closing.connect(self.closeEvent)
-            else:
-                self._slave = None
 
         self.initUi(parent)                         # Initialise user interface
         self.show()                          # Display Widget in User Interface
@@ -143,6 +138,7 @@ class QFellesWidgetBaseClass(QWidget):
             self.getSample.connect(self.setSample)
             #sleep(0.1)
             self.onInit()
+            self.statusMessage.emit("Hello")
             #sleep(0.1)
 
     @pyqtSlot()
@@ -193,86 +189,89 @@ class QFellesWidgetBaseClass(QWidget):
         """
         return [cls.findWidget(_id) for _id in cls.___ports___[portname]]
 
-
-
 # Thread class -------------------------------------------------------------- #
 class FellesThread(QThread):
-    RATE = 0.1
+
+    priorities = { "Highest": 5, "High": 4, "Idle": 0, "Inheerit": 7, "Low": 2,
+                 "Lowest": 1, "Normal": 3}
 
     def __init__ (self, port):
         super(FellesThread, self).__init__()
         self.widgets = QFellesWidgetBaseClass.findWidgetsAttachedToPort(port)
 
-        print("Initialising Thread for port '%s' " %port)
+        print("\nInitialising Thread for port '%s' " %port)
         for widget in self.widgets:
             print("Initialising -------------------------- Widget")
             widget.setSlave()
 
         self.portname = port
-        self.daemon = True                              # Use a daemonic thread
-
-        self._data = defaultdict(dict)
-        self.events = []
 
         self.started = time()                                  # Set Start time
         self.start()                                             # Start Thread
+        self.setPriority(self.priorities["Highest"])
 
     def sample(self, timestamp):
         """
-        @brief     Loop over all slaves obtaining MVs
-        @param   timestamp  float  (required)   Time when sampling is performed 
+        @brief    "Sampling Loop" over all widgets
+        @param    timestamp  float  (required)  Time when sampling is performed
+        @details
+                  There are multiple hacks here...
+
+                  1. Sampling is sequential, but all samples receive the same
+                     time. Ugly...
+                  2. Asynchronous sampling within a thread is not permitted.
+                     The reason for this is limitations in the communication
+                     protocol (RS485).
+                  3. Start/Pause/Resume/Restart is done as "events", i.e.
+                     between sampling loops.
         """
         for widget in self.widgets:
-            try:
-                widget.getSample.emit(timestamp)
-
-            except IOError as e:
-                print("Failed to read measurement:\n\t\t\t\t %s" %(e))
-
-            except SerialException as e:
-                print("Serial Exception")
-                raise e
-
-            except ValueError as e:
-                print("Value Error")
-                raise e
-
-            except Exception as e:
-                print("Exception")
-                raise e
+            widget.getSample.emit(timestamp)
 
     def event(self, timestamp):
         """
-        @brief     Perform events, such as control actions or user actions
+        @brief    "Event loop", execute control or user actions
         """
         for widget in self.widgets:
-            try:
-                widget.onEvent()
-            except Exception as e:
-                print e
+            widget.onEvent()
 
     def run(self):
         """
-        @brief     Method performing the sampling (executed by `self.start()`).
+        @brief    Method performing the sampling (executed by `self.start()`)
+        @details
+                  !!Yet another hack!!
+                  The thread is put to sleep between the "sample" and "event"
+                  loops. The network connection seems to be overloaded if I
+                  do not do this,
         """
-        #          !! Hack Notification !!
-        # I am putting the thread to sleep between the "sample" and "event"
-        # loops because the network communication seems to be overloaded
-        # otherwise. Why is this? not quite sure...
-        while True:
+        while self.isRunning():
             dt = time() - self.started
             self.sample(dt)                  # Perform sampling for all widgets
-            sleep(0.1)                                  # Put Thread "to sleep"
+            self.msleep(100)                             # Put Thread "to sleep"
             self.event(dt)                                      # Handle events
-        print("Thread is dying")
+
+    def quit(self):
+        """
+        @brief   Method terminating the sampling
+        """
+        print("\nTerminating Thread for port '%s' " %self.portname)
+        while self.widgets:
+            widget = self.widgets.pop()
+            try:
+                widget.close()
+            except Exception as e:
+                print e
+
 
 # Gui class ----------------------------------------------------------------- #
 class FellesGui(QMainWindow):
     """
     """
-    initialiseSlaves = pyqtSignal()
-    quit_sampling = pyqtSignal()
-    closing = pyqtSignal()
+    startSampling  = pyqtSignal()
+    pauseSampling  = pyqtSignal()
+    stopSampling   = pyqtSignal()
+
+    terminateThreads = pyqtSignal()
 
     def __init__(self, Ui_MainWindow, timeout=1000):
         super(FellesGui, self).__init__()
@@ -300,12 +299,13 @@ class FellesGui(QMainWindow):
         # --> Order widgets to connect to their slaves
         #self.initialiseSlaves.emit()
         # -->  Initialise "Threads" performing the sampling
-        print QFellesWidgetBaseClass.___ports___.keys()
+        #print QFellesWidgetBaseClass.___ports___.keys()
         ports = ["/dev/ttyUSB0"] # QFellesWidgetBaseClass.___ports___.keys()
 
-        self.sampling_threads = [ FellesThread(port) for port in ports ]
+        self.threads = [ FellesThread(port) for port in ports ]
+        for thread in self.threads:
+            self.terminateThreads.connect(thread.quit)
 
-        #self.statusBar().showMessage.connect(FellesThread.sample_failed)
         self.statusBar().showMessage('Idling...')
 
     def buildUi(self, Ui_MainWindow):
@@ -321,36 +321,12 @@ class FellesGui(QMainWindow):
                                    QMessageBox.Yes, QMessageBox.No)
 
         if reply == QMessageBox.Yes:
-            self.closing.emit()
+            self.terminateThreads.emit()
             event.accept()
         else:
             event.ignore()
 
-"""
-        # option #1
-        # if you want to trigger a cleanup specifically when
-        # this widget is closed, as opposed to destroyed
-        print(dir(self.layout().widget))
-        for i in xrange(self.layout().count()):
-            item = self.layout.itemAt(i)
-            widget = item.widget()       
-            if widget:
-                print("----")
-                try:
-                    widget.close()
-                except:
-                    pass
-        #print(dir(event))
-        # Or Option #3 - emit a custom signal
-        self.closing.emit()
-
-        super(FellesGui, self).closeEvent(event)
-        event.accept()
-
-#    def paintEvent(self, event=None, *args):
-#        pass
-"""
-
+# --------------------------------------------------------------------------- #
 def run_gui(Ui_MainWindow):
     """ Function launching a application
     """
