@@ -32,8 +32,10 @@ from PyQt4.QtGui import (QIcon, QPixmap, QFont, QMainWindow, QLabel, QWidget,
 QPushButton,  QHBoxLayout, QVBoxLayout, QMenuBar, QStatusBar, QAbstractButton,
 QDialog)
 
-from felleslab.gui import QFellesWidgetBaseClass
-from felleslab.equipment import JType
+from serial import SerialException
+
+from felleslab.core import QFellesWidgetBaseClass
+from felleslab.equipment import JType, KType, TType
 from felleslab import icons
 
 from time import time
@@ -45,21 +47,19 @@ class QFellesThermocouple(QFellesWidgetBaseClass):
     @brief     Widget
     """
     newSample = pyqtSignal(str)
-
-    meta = { "type": "Temperature",
-             "name": "Top",
-             "unit": "[C]",
-             "channel" : 0,
-             "portname" : "/dev/ttyUSB0",
-             "slaveaddress": 1,
-             "baudrate" : 19200,
-    }
-    _slave = JType
-
+    _slave = TType
+    _types = {"T": TType, "J": JType, "K": KType }
 
     def initUi(self, parent=None):
         """ Generates the user interface """
 
+        # Update meta data
+        self.meta["type"] = "Temperature"
+        self.meta["name"] = "foobar"
+        self.meta["unit"] = "[C]"
+        self.meta["channel"] = 0
+
+        # Generate label and layout for UI
         self.label = QLabel(parent)
         self.label.setObjectName("JTypeThermocouple")
         self.label.setPixmap(QPixmap(":icons/thermocouples/16x16_thumbnail.png"))
@@ -69,24 +69,25 @@ class QFellesThermocouple(QFellesWidgetBaseClass):
 
         self.setLayout(_layout)
 
-    def paintEvent(self, event=None, *args):
-        pass
-
-    def closeEvent(self, event):
-        print("Closing Thermocouple")
+    def closeEvent(self, event=None):
+        print("Shutting down %s" %self.__class__.__name__)
 
     @pyqtSlot()
     def setSample(self, event=None):
         """ Called to update widget in GUI
         """
-        sample = self.slave.get_analog_in()
+        try:
+            sample = self.slave.get_analog_in()
+        except IOError:
+            print("IOError, Temperature measurement (there is still hope)")
+            print("\tport: %s, address: %d, channel: %d" %(self.portname, self.slaveaddress,self.channel))
+            sample = -1
+        except SerialException as e:
+            print("Temperature measurement failed IOError (all hope is lost)")
+            raise e
+
+        self.history.append(sample)
         self.newSample.emit(str(sample))
-
-#def mousePressEvent(self, event):
-#    if event.button() == Qt.RightButton:
-#        dg = QFellesDialog(self)
-#        dg.show()
-
 
 # ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: #
 if __name__ == '__main__':

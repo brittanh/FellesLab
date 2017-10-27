@@ -145,60 +145,6 @@ class DummyModbus(object):
         pass
 
 
-
-class MyRef(weakref.ref):
-    """
-    Weakreference class, creates an alias to "referee".
-
-    Understand the class works by considering the following example:
-
-        example.py
-        ----------------------------------------------------------------------
-        import weakref
-
-        class MyRef(weakref.ref):
-
-            def __init__(self, referee, callback=None):
-                self.referee = referee
-                super(MyRef, self).__init__(referee, callback)
-
-            def __call__(self):
-                return self.referee()
-
-        class Referee:
-            message = "References are clever"
-
-            def __call__(self):
-                return self
-
-            def ChangeMessage(self, msg):
-                self.message = msg
-
-        a = Referee()
-        b = ExtendedRef(a)
-
-        print b().message
-        b().ChangeMessage("A different message")
-        print a.message
-        ----------------------------------------------------------------------
-    """
-
-    def __init__(self, referee, callback=None):
-        self.referee = referee
-        super(MyRef, self).__init__(referee, callback)
-
-    def __call__(self):
-        """
-        Magic method.
-
-        Returns the object that the class referes to. The practical
-        implication is that it becomes possible to access the objects methods
-        and variables through the reference class.
-        """
-        return self.referee
-
-
-
 class AdaptorBaseClass(object):
     """
     """
@@ -225,37 +171,27 @@ class AdaptorBaseClass(object):
     def __init__(self, portname, slaveaddress):
         super(AdaptorBaseClass, self).__init__(portname, slaveaddress)
 
-        self._id = id(self)
-        self.samples = []
         self.portname = self.serial.port
         self.slaveaddress = slaveaddress
 
+    @property
+    def port(self):
+        return self.serial.port
+
+    @port.setter
+    def port(self, portname):
+        self.serial.port = portname
+
+    @property
+    def baudrate(self):
+        return self.serial.baudrate
+
+    @baudrate.setter
+    def baudrate(self, val):
+        self.serial.baudrate = val
+
     def __str__(self):
         return "<type %s at %s>" %(type(self), hex(self._id))
-
-    @abstractmethod
-    def __repr__(self):
-        return "%s%d" %(self.portname,self.slaveaddress)
-
-    def __eq__(self, other):
-        """
-        @brief  Adaptors are equal if the port and address in the network is
-                the same.
-        """
-        return True if repr(self) == repr(other) else False
-
-    @classmethod
-    def getPorts(cls):
-        return set( [ adaptor.portname for adaptor in cls.___refs___] ) 
-
-
-    @classmethod
-    def getAdaptors(cls, portname):
-        return [ a for a in cls.___refs___ if a.portname == portname ]
-
-    @classmethod
-    def findAdaptor(cls, _id):
-        return [ a for a in cls.___refs___ if a._id == _id ]        
 
 # --------------------------------------------------------------------------- #
 class AdamAdaptorBase(AdaptorBaseClass):
@@ -264,20 +200,9 @@ class AdamAdaptorBase(AdaptorBaseClass):
 
     def __init__(self, portname, slaveaddress, channel):
 
-        self.portname = portname
-        self.slaveaddress = slaveaddress
         self.channel = channel
-
         super(AdamAdaptorBase, self).__init__(portname, slaveaddress)
 
-    def __repr__(self):
-        return "%s%d%d" %(self.portname,self.slaveaddress,self.channel)
-
-    def __getitem__(self, key):
-        return self._buffer[key]
-
-    def __setitem__(self, key, val):
-        self._buffer[key].append(val)
 
 
 class AdamAnalogInputModule(AdamAdaptorBase):

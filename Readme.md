@@ -52,7 +52,6 @@ export PYQTDESIGNERPATH="<path>"
 ## Dependencies
 
 
-
 ### Ubuntu (Linux)
 
 ```

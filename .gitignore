@@ -1,0 +1,32 @@
+# Exclude all files by default
+**/*
+# Include all directories and Explicitly include relevant file-types
+!**/
+# The gitignore file
+!.gitignore
+# Scripting languages
+!*.py
+!*.m
+!*.rb
+# Misc
+!*.svg
+!*.gp
+!*.gpl
+# Compiled programming languages
+!*.c
+!*.h
+!*.cpp
+!*.C
+!*.hpp
+!*.H
+!*.f
+!*.F
+!*.f90
+!*.F90
+# Document markup files
+!*.md
+!*.txt
+!*.tex
+!*.bib
+!*.sty
+!*.cls

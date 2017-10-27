@@ -33,7 +33,7 @@ from PyQt4.QtGui import (QIcon, QImage, QPixmap, QFont, QMainWindow, QLabel,
                         QAbstractButton, QDialog)
 
 
-from felleslab.gui import QFellesWidgetBaseClass
+from felleslab.core import QFellesWidgetBaseClass
 from felleslab.equipment.solenoidvalve import SolenoidValve
 from felleslab import icons
 
@@ -46,30 +46,27 @@ valve_void   = ":icons/valves/48x48_solenoid.png"
 # Valve Widget -------------------------------------------------------------- #
 class QFellesSolenoidValve(QFellesWidgetBaseClass):
     """
-    @brief     Widget
+    @brief     Widget representing a sol
     """
-    valveOpen  = pyqtSignal(name="openValve")
-    valveClose = pyqtSignal(name="closeValve")
+    valveOpen    = pyqtSignal()
+    valveClose   = pyqtSignal()
+    stateChanged = pyqtSignal(int, name = "switch")
 
     ICONS = [ valve_open, valve_closed, valve_void ]
 
-    meta = { "type": "Position",
-             "name": "Valve",
-             "unit": "[-]",
-             "channel" : 0,
-             "portname" : "/dev/ttyUSB0",
-             "slaveaddress": 1,
-             "baudrate" : 19200,
-            }
+    _state        = -1                                          # <-- set-point
+    _slave        = SolenoidValve
 
-    _state        = -1 # <-- set-point
-    _initialState =  0 # <-- initial set-point
-    _finalState   =  0 # <-- final set-point
-
-    _slave = SolenoidValve
 
     def initUi(self, parent=None):
         """ Generates the user interface """
+        # Update Widget Meta Data
+        self.meta["type"] = "Valve"
+        self.meta["name"] = "foobar"
+        self.meta["unit"] = "--"
+        self.meta["initialState"] = 0
+        self.meta["finalState"]   = 0
+
         self.label = QLabel(parent)
         self.label.setObjectName("Solenoid Valve")
         self.label.setPixmap(QPixmap(self.ICONS[self._state]))
@@ -83,7 +80,7 @@ class QFellesSolenoidValve(QFellesWidgetBaseClass):
 
     @pyqtProperty(int)
     def initialState(self):
-        return self.slave.state
+        return self._initialState
 
     @initialState.setter
     def initialState(self, value):
@@ -99,7 +96,10 @@ class QFellesSolenoidValve(QFellesWidgetBaseClass):
 
     @property
     def state(self):
-        return self.slave.state
+        try:
+            return self.slave.state
+        except:
+            return -1
 
     @state.setter
     def state(self, value):
@@ -107,10 +107,10 @@ class QFellesSolenoidValve(QFellesWidgetBaseClass):
         self.paintEvent()
 
     def onInit(self):
-        if self._initialState == 0:
-            self.setOpen()
-        else:
-            self.setClose()
+        self.state = self.meta["initialState"]
+
+    def onQuit(self):
+        self.state = self.meta["finalState"]
 
     def isOpen(self):
         return self.state == 0
@@ -119,16 +119,18 @@ class QFellesSolenoidValve(QFellesWidgetBaseClass):
         return self.state == 1
 
     def closeValve(self):
-        self.slave.setClose()
-        self.isClosed()
+        self.state = 1
 
     def openValve(self):
-        self.slave.setOpen()
-        self.isOpen()
+        self.state = 0
 
     @pyqtSlot()
-    def setSample(self):
-        self.newSample.emit(str(self.state))
+    def setSample(self, event=None):
+        """ Called to update widget in GUI
+        """
+        sample = self.state
+        self.history.append(sample)
+        self.newSample.emit(str(sample))
 
     @pyqtSlot()
     def setOpen(self):
@@ -148,17 +150,15 @@ class QFellesSolenoidValve(QFellesWidgetBaseClass):
     def mouseReleaseEvent(self, event):
         self.setSwitchState()
 
-    def retranslateUi(self, parent):
-        self.label.setPixmap(QPixmap(self.ICONS[self.state]))
+    #def retranslateUi(self, parent):
+    #    self.label.setPixmap(QPixmap(self.ICONS[self.state]))
 
     def paintEvent(self, event=None, *args):
         self.label.setPixmap(QPixmap(self.ICONS[self.state]))
 
-    def setProperty(self, key, val):
-        self.meta[key] = val
-
-    def closeEvent(self, event):
-        self.events.append(self.slave.onQuit)
+    def closeEvent(self, event=None):
+        print("Shutting down %s" %self.__class__.__name__)
+        self.events.append(self.onQuit)
 
 # ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: #
 if __name__ == '__main__':

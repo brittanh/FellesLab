@@ -11,6 +11,7 @@ args = {
     'version'       : '0.1.0',
     'packages'      : ['felleslab',
                        'felleslab.communication',
+                       'felleslab.core',
                        'felleslab.equipment',
                        'felleslab.icons',
                        'felleslab.qt_plugins',
