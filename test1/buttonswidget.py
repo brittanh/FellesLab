@@ -23,10 +23,7 @@
 import sys
 from PyQt4.QtGui import QPushButton, QWidget, QIcon, QApplication, QPixmap, QHBoxLayout, QVBoxLayout, QMainWindow
 from PyQt4.QtCore import QCoreApplication, pyqtSlot
-
 from felleslab.icons import *
-import os
-os.chdir('/Users/brittanyhall/Documents/GitHub/FellesLab/test1')
 
 #Just for testing purposes
 class MainWindow(QMainWindow):
@@ -41,23 +38,16 @@ class MainWindow(QMainWindow):
         
         QApplication.processEvents()
 
-states = ["idle", "sample", "paused"] #allowed states
-transistion = ["idle-sample","paused-sample","paused-idle","sample-paused", "sample-idle"] #allowed transistions
-
 
 class ButtonWidget(QWidget):
 
     def __init__(self, parent):
         super(ButtonWidget, self).__init__()
         self._state = 0 #default state of idle
-        self._transistion = 0 #default transistion of idle to sample
         self.initUI()
         self.StartButton.clicked.connect(self.on_click)
-#        self.StartButton.clicked.connect(self.state_change)
         self.PauseButton.clicked.connect(self.on_click)
-#        self.PauseButton.clicked.connect(self.state_change)
         self.StopButton.clicked.connect(self.on_click)
-#        self.StopButton.clicked.connect(self.state_change)
 
     @property
     def state(self):
@@ -69,17 +59,6 @@ class ButtonWidget(QWidget):
             TODO: possible state values: 0, 1, 2. CHECK!
         """
         self._state = value
-
-    @property
-    def transistion(self):
-        return self._transistion
-    
-    @transistion.setter
-    def transistion(self,value):
-        """
-            TODO: possible transistion values: 0, 1, 2, 3, 4. CHECK!
-        """
-        self._transition = value
     
     def initUI(self):
         #Defining Buttons
@@ -138,27 +117,22 @@ class ButtonWidget(QWidget):
         btn_name = str(sending_button.objectName())
         if btn_name == 'Start':
             old_state = self.state
-            self.state = 1 #change state to sampling
+            self.state = 1 #changing state to sampling
             self.StartButton.setDisabled(True)
             self.PauseButton.setEnabled(True)
             self.StopButton.setEnabled(True)
         elif btn_name == 'Pause':
             old_state = self.state
-            self.state = 0 #changing state to idle
+            self.state = 2 #changing state to paused
             self.StartButton.setEnabled(True)
             self.PauseButton.setDisabled(True)
             self.StopButton.setEnabled(True)
         elif btn_name == 'Stop':
             old_state = self.state
-            self.state = 0 #changing state to
+            self.state = 0 #changing state to idle
             self.StartButton.setEnabled(True)
             self.PauseButton.setDisabled(True)
             self.StopButton.setDisabled(True)
-
-
-    @pyqtSlot()
-    def transistion(self, event=None):
-        return self.transistion
 
 def main():
     app = QApplication(sys.argv)
