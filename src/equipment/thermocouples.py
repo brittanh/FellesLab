@@ -24,7 +24,8 @@ from collections import deque
 
 # Define Decorator Functions ------------------------------------------------ #
 def j_type_conversion(wrapped):
-    """ Decorator performing the conversion from bit value """
+    """ Decorator performing the conversion from bit value
+    """
     def wrap(instance, *args, **kwargs):
         return 760.0*wrapped(instance, *args, **kwargs)/65536
     return wrap
@@ -51,13 +52,6 @@ class ThermocoupleBase(Adam4019P):
     _setpoint  = float
 
     def __init__(self, portname, slaveaddress, channel, **kwargs):
-        if "type" not in kwargs:
-            kwargs["type"] = self.__class__.__name__
-        if "name" not in kwargs:
-            kwargs["name"] = "Address %d Channel %d" %(slaveaddress, channel)
-        if "unit" not in kwargs:
-            kwargs["unit"] = "--"
-        self.__dict__.update(**kwargs)
 
         super(ThermocoupleBase, self).__init__(portname, slaveaddress, channel)
 
@@ -77,12 +71,9 @@ class ThermocoupleBase(Adam4019P):
 # Define Children ----------------------------------------------------------- #
 class JType(ThermocoupleBase):
 
-    def get_raw_measurement(self):
-        return super(JType, self).get_analog_in()
-
     @j_type_conversion
     def get_analog_in(self):
-        return self.get_raw_measurement()
+        return super(JType, self).get_analog_in()
 
 
 class KType(ThermocoupleBase):

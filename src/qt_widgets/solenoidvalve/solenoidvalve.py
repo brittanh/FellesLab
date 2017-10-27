@@ -33,7 +33,7 @@ from PyQt4.QtGui import (QIcon, QImage, QPixmap, QFont, QMainWindow, QLabel,
                         QAbstractButton, QDialog)
 
 
-from felleslab.gui import QFellesWidgetBaseClass
+from felleslab.core import QFellesWidgetBaseClass
 from felleslab.equipment.solenoidvalve import SolenoidValve
 from felleslab import icons
 
@@ -48,27 +48,25 @@ class QFellesSolenoidValve(QFellesWidgetBaseClass):
     """
     @brief     Widget representing a sol
     """
-    valveOpen  = pyqtSignal(name="openValve")
-    valveClose = pyqtSignal(name="closeValve")
+    valveOpen    = pyqtSignal()
+    valveClose   = pyqtSignal()
+    stateChanged = pyqtSignal(int, name = "switch")
 
     ICONS = [ valve_open, valve_closed, valve_void ]
 
-    meta = { "type": "Position",
-             "name": "Valve",
-             "unit": "[-]",
-             "channel" : 0,
-             "portname" : "/dev/ttyUSB0",
-             "slaveaddress": 1,
-             "baudrate" : 19200,
-            }
-
     _state        = -1                                          # <-- set-point
-    _initialState =  0                                      # initial set-point
-    _finalState   =  0                                     # terminal set-point
     _slave        = SolenoidValve
+
 
     def initUi(self, parent=None):
         """ Generates the user interface """
+        # Update Widget Meta Data
+        self.meta["type"] = "Valve"
+        self.meta["name"] = "foobar"
+        self.meta["unit"] = "--"
+        self.meta["initialState"] = 0
+        self.meta["finalState"]   = 0
+
         self.label = QLabel(parent)
         self.label.setObjectName("Solenoid Valve")
         self.label.setPixmap(QPixmap(self.ICONS[self._state]))
@@ -98,7 +96,10 @@ class QFellesSolenoidValve(QFellesWidgetBaseClass):
 
     @property
     def state(self):
-        return self.slave.state if self.slave else -1
+        try:
+            return self.slave.state
+        except:
+            return -1
 
     @state.setter
     def state(self, value):
@@ -106,16 +107,10 @@ class QFellesSolenoidValve(QFellesWidgetBaseClass):
         self.paintEvent()
 
     def onInit(self):
-        if self._initialState == 0:
-            self.setOpen()
-        else:
-            self.setClose()
+        self.state = self.meta["initialState"]
 
     def onQuit(self):
-        if self._finalState == 0:
-            self.setOpen()
-        else:
-            self.setClose()
+        self.state = self.meta["finalState"]
 
     def isOpen(self):
         return self.state == 0
@@ -124,18 +119,16 @@ class QFellesSolenoidValve(QFellesWidgetBaseClass):
         return self.state == 1
 
     def closeValve(self):
-        self.slave.setClose()
-        self.isClosed()
+        self.state = 1
 
     def openValve(self):
-        self.slave.setOpen()
-        self.isOpen()
+        self.state = 0
 
     @pyqtSlot()
     def setSample(self, event=None):
         """ Called to update widget in GUI
         """
-        sample = self.slave.getState()
+        sample = self.state
         self.history.append(sample)
         self.newSample.emit(str(sample))
 
@@ -157,8 +150,8 @@ class QFellesSolenoidValve(QFellesWidgetBaseClass):
     def mouseReleaseEvent(self, event):
         self.setSwitchState()
 
-    def retranslateUi(self, parent):
-        self.label.setPixmap(QPixmap(self.ICONS[self.state]))
+    #def retranslateUi(self, parent):
+    #    self.label.setPixmap(QPixmap(self.ICONS[self.state]))
 
     def paintEvent(self, event=None, *args):
         self.label.setPixmap(QPixmap(self.ICONS[self.state]))

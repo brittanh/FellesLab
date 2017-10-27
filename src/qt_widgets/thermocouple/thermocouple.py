@@ -32,8 +32,8 @@ from PyQt4.QtGui import (QIcon, QPixmap, QFont, QMainWindow, QLabel, QWidget,
 QPushButton,  QHBoxLayout, QVBoxLayout, QMenuBar, QStatusBar, QAbstractButton,
 QDialog)
 
-from felleslab.gui import QFellesWidgetBaseClass
-from felleslab.equipment import JType
+from felleslab.core import QFellesWidgetBaseClass
+from felleslab.equipment import JType, KType, TType
 from felleslab import icons
 
 from time import time
@@ -45,20 +45,19 @@ class QFellesThermocouple(QFellesWidgetBaseClass):
     @brief     Widget
     """
     newSample = pyqtSignal(str)
-
-    meta = { "type": "Temperature",
-             "name": "Top",
-             "unit": "[C]",
-             "channel" : 0,
-             "portname" : "/dev/ttyUSB0",
-             "slaveaddress": 1,
-             "baudrate" : 19200,
-    }
-    _slave = JType
+    _slave = TType
+    _types = {"T": TType, "J": JType, "K". KType }
 
     def initUi(self, parent=None):
         """ Generates the user interface """
 
+        # Update meta data
+        self.meta["type"] = "Temperature"
+        self.meta["name"] = "foobar"
+        self.meta["unit"] = "[C]"
+        self.meta["channel"] = 0
+
+        # Generate label and layout for UI
         self.label = QLabel(parent)
         self.label.setObjectName("JTypeThermocouple")
         self.label.setPixmap(QPixmap(":icons/thermocouples/16x16_thumbnail.png"))

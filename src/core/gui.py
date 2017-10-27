@@ -73,16 +73,17 @@ class QFellesWidgetBaseClass(QWidget):
     def __init__(self, parent=None):
         """
         """
+        self.meta = self.__class__.meta.copy()
         super(QFellesWidgetBaseClass, self).__init__(parent)
         self.__class__.___refs___.append(self)
         self._id = hex(id(self))
         self.events = [ ]
         self._history = deque(maxlen=100)
 
-        #                  !! Hack Warning !!
-        # The following "if statements" are a "hack" to ensure the widgets
-        # do not throw errors when used in QtDesigner. The problem is that
-        # it is "my" MainWindow (FellesGui) that contains the signals for
+        #                  !!! Hack Warning !!!
+        # The following "if statements" are a "hack" to ensure the widgets do
+        # not throw errors when used in QtDesigner. The problem is that it is
+        # "my" MainWindow (FellesGui) that contains the signals for
         # initialisation and terminating the felles widgets.
         if parent:
             if type(parent.parent()) == FellesGui:
@@ -110,7 +111,8 @@ class QFellesWidgetBaseClass(QWidget):
         print("- - - -")
 
     def onEvent(self):
-        for event in self.events:
+        while self.events:
+            event = self.events.pop(0)
             event.emit()
 
     @pyqtProperty(list)
@@ -121,17 +123,27 @@ class QFellesWidgetBaseClass(QWidget):
     def history(self, val):
         self._history.append(val)
 
-    @pyqtSlot(str, int)
-    def setSlave(self, portname=None, slaveaddress=None):
+    #@pyqtSlot()
+    def setSlave(self):
         """
         @param  portname      str (optional)  RS485 connection port
         @param  slaveaddress  int (optional)  Address of unit in the network
         """
         if self._slave:
+            print("Type\t: %s:" %(self.meta["type"]))
+            print("Unit\t: %s:" %(self._slave.__class__.__name__))
+            print("Name\t: %s" %self.meta["name"])
+            print("Port\t: %s" %self.meta["portname"])
+            print("Rate\t: %s" %self.meta["baudrate"])
+            print("Address\t: %s" %self.meta["slaveaddress"])
+            print("Channel\t: %s" %self.meta["channel"])
             self.slave = self.__class__._slave(**self.meta)
             self.__class__.___ports___[str(self.meta["portname"])].append(self._id)
+            #sleep(0.1)
             self.getSample.connect(self.setSample)
+            #sleep(0.1)
             self.onInit()
+            #sleep(0.1)
 
     @pyqtSlot()
     def setSample(self):
@@ -142,8 +154,10 @@ class QFellesWidgetBaseClass(QWidget):
         return self.meta["portname"]
 
     @portname.setter
-    def baudrate(self, string):
-        self.meta["portname"] = string
+    def portname(self, string):
+        self.__class__.___ports___[str(self.meta["portname"])].append(self._id)
+        self.meta["portname"] = str(string)
+        print string
 
     @pyqtProperty(int)
     def channel(self):
@@ -151,15 +165,16 @@ class QFellesWidgetBaseClass(QWidget):
 
     @channel.setter
     def channel(self, val):
-        self.meta["channel"] = val
+        self.meta["channel"] = int(val)
 
     @pyqtProperty(int)
     def baudrate(self):
         return self.meta["baudrate"]
 
     @baudrate.setter
-    def baudrate(self, string):
-        self.meta["baudrate"] = string
+    def baudrate(self, val):
+        _baudrates = [ int(i*9600) for i in [1,2,3,4] ]
+        self.meta["baudrate"] = int(val)
 
     @classmethod
     def findWidget(cls, _id):
@@ -186,8 +201,12 @@ class FellesThread(QThread):
 
     def __init__ (self, port):
         super(FellesThread, self).__init__()
-        print("Initialising sampling thread for port %s" %port)
         self.widgets = QFellesWidgetBaseClass.findWidgetsAttachedToPort(port)
+
+        print("Initialising Thread for port '%s' " %port)
+        for widget in self.widgets:
+            print("Initialising -------------------------- Widget")
+            widget.setSlave()
 
         self.portname = port
         self.daemon = True                              # Use a daemonic thread
@@ -236,11 +255,15 @@ class FellesThread(QThread):
         """
         @brief     Method performing the sampling (executed by `self.start()`).
         """
+        #          !! Hack Notification !!
+        # I am putting the thread to sleep between the "sample" and "event"
+        # loops because the network communication seems to be overloaded
+        # otherwise. Why is this? not quite sure...
         while True:
             dt = time() - self.started
             self.sample(dt)                  # Perform sampling for all widgets
+            sleep(0.1)                                  # Put Thread "to sleep"
             self.event(dt)                                      # Handle events
-            sleep(0.5)                                  # Put Thread "to sleep"
         print("Thread is dying")
 
 # Gui class ----------------------------------------------------------------- #
@@ -275,10 +298,11 @@ class FellesGui(QMainWindow):
         self.fileMenu.addAction(self.exitAction)
 
         # --> Order widgets to connect to their slaves
-        self.initialiseSlaves.emit()
-
+        #self.initialiseSlaves.emit()
         # -->  Initialise "Threads" performing the sampling
-        ports = QFellesWidgetBaseClass.___ports___.keys()
+        print QFellesWidgetBaseClass.___ports___.keys()
+        ports = ["/dev/ttyUSB0"] # QFellesWidgetBaseClass.___ports___.keys()
+
         self.sampling_threads = [ FellesThread(port) for port in ports ]
 
         #self.statusBar().showMessage.connect(FellesThread.sample_failed)

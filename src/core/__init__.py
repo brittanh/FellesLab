@@ -17,5 +17,5 @@ o888o    `Y8bod8P' o888oo888o `Y8bod8P' 8""888P' o888ooood8 `Y888""8o `Y8bod8P'
 @version       0.1
 
 """
-from gui import run_gui
+from gui import run_gui, QFellesWidgetBaseClass
 

@@ -19,7 +19,7 @@ o888o    `Y8bod8P' o888oo888o `Y8bod8P' 8""888P' o888ooood8 `Y888""8o `Y8bod8P'
 """
 
 from ui_GUI import Ui_MainWindow
-from felleslab.gui import run_gui
+from felleslab.core import run_gui
 
 run_gui(Ui_MainWindow)
 
