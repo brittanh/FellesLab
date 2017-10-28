@@ -91,20 +91,6 @@ class SolenoidValve(Adam4069):
         """
         return self.state
 
-    def set_digital_out(self, value):
-        """
-        @brief   Calls the equivalent method in the parent class, thus changing
-                 the state of the valve.
-        """
-        return super(SolenoidValve, self).set_digital_out(self.channel, value)
-
-    def get_digital_out(self):
-        """
-        @brief   Calls the equivalent method in the parent class, thus querying
-                 the state of the valve.
-        """
-        return super(SolenoidValve, self).get_digital_out(self.channel)
-
 # ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: #
 if __name__ == '__main__':
     from time import time, sleep

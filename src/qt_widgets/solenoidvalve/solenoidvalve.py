@@ -48,8 +48,8 @@ class QFellesSolenoidValve(QFellesWidgetBaseClass):
     """
     @brief     Widget representing a sol
     """
-    valveOpen    = pyqtSignal()
-    valveClose   = pyqtSignal()
+    valveOpened  = pyqtSignal()
+    valveClosed  = pyqtSignal()
     stateChanged = pyqtSignal(int, name = "switch")
 
     ICONS = [ valve_open, valve_closed, valve_void ]
@@ -75,24 +75,21 @@ class QFellesSolenoidValve(QFellesWidgetBaseClass):
         _layout.addWidget(self.label)
         self.setLayout(_layout)
 
-        self.valveClose.connect(self.closeValve)
-        self.valveOpen.connect(self.openValve)
-
     @pyqtProperty(int)
     def initialState(self):
-        return self._initialState
+        return self.meta["initialState"]
 
     @initialState.setter
     def initialState(self, value):
-        self._initialState = value
+        self.meta["initialState"] = value
 
     @pyqtProperty(int)
     def finalState(self):
-        return self._finalState
+        return self.meta["finalState"]
 
     @finalState.setter
     def finalState(self, value):
-        self._finalState = value
+        self.meta["finalState"] = value
 
     @property
     def state(self):
@@ -120,9 +117,11 @@ class QFellesSolenoidValve(QFellesWidgetBaseClass):
 
     def closeValve(self):
         self.state = 1
+        self.valveClosed.emit()
 
     def openValve(self):
         self.state = 0
+        self.valveOpened.emit()
 
     @pyqtSlot()
     def setSample(self, event=None):
@@ -134,31 +133,28 @@ class QFellesSolenoidValve(QFellesWidgetBaseClass):
 
     @pyqtSlot()
     def setOpen(self):
-        self.events.append(self.valveOpen)
+        self.events.append(self.openValve)
 
     @pyqtSlot()
     def setClose(self):
-        self.events.append(self.valveClose)
+        self.events.append(self.closeValve)
 
     @pyqtSlot()
     def setSwitchState(self):
         if self.isOpen():
-            self.events.append(self.valveClose)
+            self.events.append(self.closeValve)
         else:
-            self.events.append(self.valveOpen)
+            self.events.append(self.openValve)
 
     def mouseReleaseEvent(self, event):
         self.setSwitchState()
-
-    #def retranslateUi(self, parent):
-    #    self.label.setPixmap(QPixmap(self.ICONS[self.state]))
 
     def paintEvent(self, event=None, *args):
         self.label.setPixmap(QPixmap(self.ICONS[self.state]))
 
     def closeEvent(self, event=None):
         print("Shutting down %s" %self.__class__.__name__)
-        self.events.append(self.onQuit)
+        self.onQuit()
 
 # ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: #
 if __name__ == '__main__':
