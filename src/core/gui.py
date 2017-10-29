@@ -108,7 +108,7 @@ class QFellesWidgetBaseClass(QWidget):
     def onEvent(self):
         while self.events:
             event = self.events.pop(0)
-            event.emit()
+            event()
 
     @pyqtProperty(list)
     def history(self):
@@ -128,22 +128,29 @@ class QFellesWidgetBaseClass(QWidget):
             print("Type\t: %s:" %(self.meta["type"]))
             print("Unit\t: %s:" %(self._slave.__class__.__name__))
             print("Name\t: %s" %self.meta["name"])
-            print("Port\t: %s" %self.meta["portname"])
-            print("Rate\t: %s" %self.meta["baudrate"])
+            print("Port\t: %s" %self.portname)
+            print("Rate\t: %s" %self.baudrate)
             print("Address\t: %s" %self.meta["slaveaddress"])
-            print("Channel\t: %s" %self.meta["channel"])
+            print("Channel\t: %s" %self.channel)
             self.slave = self.__class__._slave(**self.meta)
             self.__class__.___ports___[str(self.meta["portname"])].append(self._id)
             #sleep(0.1)
             self.getSample.connect(self.setSample)
             #sleep(0.1)
             self.onInit()
-            self.statusMessage.emit("Hello")
             #sleep(0.1)
 
     @pyqtSlot()
     def setSample(self):
         raise NotImplementedError("You idiot...")
+
+    @pyqtProperty(int)
+    def slaveaddress(self):
+        return self.meta["slaveaddress"]
+
+    @slaveaddress.setter
+    def slaveaddress(self, value):
+        self.meta["slaveaddress"] = int(value)
 
     @pyqtProperty(str)
     def portname(self):
@@ -151,9 +158,9 @@ class QFellesWidgetBaseClass(QWidget):
 
     @portname.setter
     def portname(self, string):
+        print("---------------------------------- " + string)
         self.__class__.___ports___[str(self.meta["portname"])].append(self._id)
         self.meta["portname"] = str(string)
-        print string
 
     @pyqtProperty(int)
     def channel(self):
@@ -172,6 +179,17 @@ class QFellesWidgetBaseClass(QWidget):
         _baudrates = [ int(i*9600) for i in [1,2,3,4] ]
         self.meta["baudrate"] = int(val)
 
+    def setProperty(self, key, val):
+        """
+        @brief   Method needed for setting properties from QT Designer
+        """
+        if key in self.meta:
+            setattr(self, key, val)
+            #self.meta[key] = val
+            print self.meta
+        else:
+            super(QFellesWidgetBaseClass, self).setProperty(key, val)
+
     @classmethod
     def findWidget(cls, _id):
         """
@@ -188,6 +206,59 @@ class QFellesWidgetBaseClass(QWidget):
         @brief   Locate a widget based on the _id
         """
         return [cls.findWidget(_id) for _id in cls.___ports___[portname]]
+
+
+class QFellesSingleCV(QFellesWidgetBaseClass):
+    """
+    @brief   Controlled variables
+    """
+    getError = pyqtSignal()
+
+    _setpoint = None
+
+
+
+
+class QFellesSingleMV(QFellesWidgetBaseClass):
+    """
+    @brief   Manipulated variables
+    """
+    asdf = pyqtSignal()
+
+    @pyqtSlot(int)
+    @pyqtSlot(float)
+    def setState(self, val):
+        self.state = val
+
+    @pyqtProperty(int)
+    def initialState(self):
+        return self._initialState
+
+    @initialState.setter
+    def initialState(self, value):
+        self._initialState = value
+
+    @pyqtProperty(int)
+    def finalState(self):
+        return self._finalState
+
+    @finalState.setter
+    def finalState(self, value):
+        self._finalState = value
+
+    @property
+    def state(self):
+        try:
+            return self.slave.state
+        except:
+            return -1
+
+    @state.setter
+    def state(self, value):
+        self.slave.state = value
+        self.paintEvent()
+
+
 
 # Thread class -------------------------------------------------------------- #
 class FellesThread(QThread):
@@ -226,7 +297,8 @@ class FellesThread(QThread):
                      between sampling loops.
         """
         for widget in self.widgets:
-            widget.getSample.emit(timestamp)
+            #widget.getSample.emit(timestamp)
+            widget.setSample(timestamp)
 
     def event(self, timestamp):
         """
@@ -299,8 +371,7 @@ class FellesGui(QMainWindow):
         # --> Order widgets to connect to their slaves
         #self.initialiseSlaves.emit()
         # -->  Initialise "Threads" performing the sampling
-        #print QFellesWidgetBaseClass.___ports___.keys()
-        ports = ["/dev/ttyUSB0"] # QFellesWidgetBaseClass.___ports___.keys()
+        ports = QFellesWidgetBaseClass.___ports___.keys()
 
         self.threads = [ FellesThread(port) for port in ports ]
         for thread in self.threads:
@@ -337,10 +408,3 @@ def run_gui(Ui_MainWindow):
     return sys.exit(app.exec_())
 
 
-# ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: #
-if __name__ == "__main__":
-    import sys
-    app = QApplication(sys.argv)
-    myapp = FellesGui()
-    myapp.show()
-    sys.exit(app.exec_())
