@@ -10,7 +10,7 @@ oooooooooooo       oooo oooo                    ooooo                 .o8
 o888o     `Y8bod8P'o888oo888o`Y8bod8P'8""888P'  o888ooooood8`Y888""8o `Y8bod8P'
 
 @summary
-@author:       Sigve Karolius
+@author        Sigve Karolius
 @organization  Department of Chemical Engineering, NTNU, Norway
 @contact       sigve.karolius@ntnu.no
 @license       Free (GPL.v3) !!! Distributed as-is !!!
@@ -32,100 +32,62 @@ from PyQt4.QtGui import (QIcon, QPixmap, QFont, QMainWindow, QLabel, QWidget,
 QPushButton,  QHBoxLayout, QVBoxLayout, QMenuBar, QStatusBar, QAbstractButton,
 QDialog)
 
-from felleslab.gui import QFellesWidgetBaseClass
-from felleslab.equipment import JType
+from serial import SerialException
+
+from felleslab.core import QFellesWidgetBaseClass
+from felleslab.equipment import JType, KType, TType
 from felleslab import icons
 
 from time import time
 
 
 # Thermocouple Widget ------------------------------------------------------- #
-class QFellesThermocouple(QWidget):
+class QFellesThermocouple(QFellesWidgetBaseClass):
     """
     @brief     Widget
     """
-    measurement_updated = pyqtSignal(str)
-
-    def __init__(self, parent=None):
-        """
-        parent is "None" when initialised by QtDesigner
-        """
-
-        super(QFellesThermocouple, self).__init__(parent)
-
-        self.initUi(parent)
-
-        self.meta = { "type": "Temperature",
-                 "name": "Top",
-                 "unit": "[C]",
-                 "channel" : 0,
-                 "portname" : "/dev/ttyUSB0",
-                 "slaveaddress": 1,
-                 "baudrate" : 19200,
-        }
-
-        # Display Widget in User Interface
-        self.show()
+    newSample = pyqtSignal(str)
+    _slave = TType
+    _types = {"T": TType, "J": JType, "K": KType }
 
     def initUi(self, parent=None):
         """ Generates the user interface """
 
+        # Update meta data
+        self.meta["type"] = "Temperature"
+        self.meta["name"] = "foobar"
+        self.meta["unit"] = "[C]"
+        self.meta["channel"] = 0
+
+        # Generate label and layout for UI
         self.label = QLabel(parent)
         self.label.setObjectName("JTypeThermocouple")
         self.label.setPixmap(QPixmap(":icons/thermocouples/16x16_thumbnail.png"))
 
-        _layout = QHBoxLayout()  #whatever layout you want
+        _layout = QHBoxLayout()  # whatever layout you want
         _layout.addWidget(self.label)
 
         self.setLayout(_layout)
 
-    def mousePressEvent(self, event):
-        if event.button() == Qt.RightButton:
-            dg = QFellesDialog(self)
-            dg.show()
-
-    def paintEvent(self, event=None, *args):
-        pass
-
-    def closeEvent(self, event):
-      print("Closing Thermocouple")
+    def closeEvent(self, event=None):
+        print("Shutting down %s" %self.__class__.__name__)
 
     @pyqtSlot()
-    def sampleEvent(self, event=None):
-      """ Called to update widget in GUI """
-      try :
-            self.slave.self.get_analog_in()
-      except :
-            self.sample_failed("asdf").emit()
+    def setSample(self, event=None):
+        """ Called to update widget in GUI
+        """
+        try:
+            sample = self.slave.get_analog_in()
+        except IOError:
+            print("IOError, Temperature measurement (there is still hope)")
+            print("\tport: %s, address: %d, channel: %d" %(self.portname, self.slaveaddress,self.channel))
+            sample = -1
+        except SerialException as e:
+            print("Temperature measurement failed IOError (all hope is lost)")
+            raise e
 
-    @pyqtProperty(str)
-    def portname(self):
-        return self.meta["portname"]
-
-    @portname.setter
-    def baudrate(self, string):
-        self.meta["portname"] = string
-
-    @pyqtProperty(int)
-    def channel(self):
-        return self.meta["channel"]
-
-    @channel.setter
-    def baudrate(self, string):
-        self.meta["channel"] = string
-
-    @pyqtProperty(int)
-    def baudrate(self):
-        return self.meta["baudrate"]
-
-    @baudrate.setter
-    def baudrate(self, string):
-        self.meta["baudrate"] = string
-
-    @pyqtSlot()
-    def initSlaves(self):
-        self.slave = JType(**self.meta)
-
+        self.history.append(sample)
+        self.newSample.emit(str(sample))
 
 # ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: #
 if __name__ == '__main__':

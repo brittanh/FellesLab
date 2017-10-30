@@ -8,6 +8,8 @@
 
 from PyQt4 import QtCore, QtGui
 
+USB = '/dev/tty.usbserial'
+
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
 except AttributeError:
@@ -100,22 +102,22 @@ class Ui_MainWindow(object):
         self.logoNTNU.setText(_translate("MainWindow", "<html><head/><body><p><img src=\":/icons/NTNU_logo.png\"/></p></body></html>", None))
         self.Valve.setToolTip(_translate("MainWindow", "Solenoid Valve", None))
         self.Valve.setWhatsThis(_translate("MainWindow", "Solenoid valve", None))
-        self.Valve.setProperty("portname", _translate("MainWindow", "/dev/ttyUSB0", None))
+        self.Valve.setProperty("portname", _translate("MainWindow", USB, None))
         self.pushButton.setText(_translate("MainWindow", "PushButton", None))
         self.pushButton_2.setText(_translate("MainWindow", "PushButton", None))
         self.Thermocouple.setToolTip(_translate("MainWindow", "Tip", None))
         self.Thermocouple.setWhatsThis(_translate("MainWindow", "What is this", None))
-        self.Thermocouple.setProperty("portname", _translate("MainWindow", "/dev/ttyUSB0", None))
+        self.Thermocouple.setProperty("portname", _translate("MainWindow", USB, None))
         self.label.setText(_translate("MainWindow", "TextLabel", None))
         self.Valve_2.setToolTip(_translate("MainWindow", "Tip", None))
         self.Valve_2.setWhatsThis(_translate("MainWindow", "What is this", None))
-        self.Valve_2.setProperty("portname", _translate("MainWindow", "/dev/ttyUSB0", None))
+        self.Valve_2.setProperty("portname", _translate("MainWindow", USB, None))
         self.Thermocouple_2.setToolTip(_translate("MainWindow", "Tip", None))
         self.Thermocouple_2.setWhatsThis(_translate("MainWindow", "What is this", None))
-        self.Thermocouple_2.setProperty("portname", _translate("MainWindow", "/dev/ttyUSB0", None))
+        self.Thermocouple_2.setProperty("portname", _translate("MainWindow", USB, None))
         self.Thermocouple_3.setToolTip(_translate("MainWindow", "Tip", None))
         self.Thermocouple_3.setWhatsThis(_translate("MainWindow", "What is this", None))
-        self.Thermocouple_3.setProperty("portname", _translate("MainWindow", "/dev/ttyUSB0", None))
+        self.Thermocouple_3.setProperty("portname", _translate("MainWindow", USB, None))
         self.label_2.setText(_translate("MainWindow", "TextLabel", None))
         self.label_3.setText(_translate("MainWindow", "TextLabel", None))
 

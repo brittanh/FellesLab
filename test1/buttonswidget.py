@@ -36,7 +36,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle('Two Tank Experiment')
         self.setWindowIcon(QIcon('chemistry-lab-instrument.svg'))
         
-        QApplication.processEvents()
+#QApplication.processEvents()
 
 
 class ButtonWidget(QWidget):
