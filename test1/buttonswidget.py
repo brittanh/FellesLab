@@ -21,9 +21,9 @@
     """
 
 import sys
-from PyQt4.QtGui import QPushButton, QWidget, QIcon, QApplication, QPixmap, QHBoxLayout, QVBoxLayout, QMainWindow
-from PyQt4.QtCore import QCoreApplication, pyqtSlot
-from felleslab.icons import *
+from PyQt4.QtGui import (QPushButton, QWidget, QIcon, QApplication, QPixmap, QHBoxLayout, QVBoxLayout, QMainWindow)
+from PyQt4.QtCore import (QCoreApplication, pyqtSlot)
+#from felleslab.icons import *
 
 #Just for testing purposes
 class MainWindow(QMainWindow):
@@ -35,9 +35,6 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.button_widget)
         self.setWindowTitle('Two Tank Experiment')
         self.setWindowIcon(QIcon('chemistry-lab-instrument.svg'))
-        
-#QApplication.processEvents()
-
 
 class ButtonWidget(QWidget):
 
@@ -104,11 +101,11 @@ class ButtonWidget(QWidget):
         hbox.addWidget(self.PauseButton)
         hbox.addWidget(self.StopButton)
     
-        vbox = QVBoxLayout()
-        vbox.addStretch(1)
-        vbox.addLayout(hbox)
-        
-        self.setLayout(vbox)
+#        vbox = QVBoxLayout()
+#        vbox.addStretch(1)
+#        vbox.addLayout(hbox)
+
+        self.setLayout(hbox)
     
     
     @pyqtSlot()

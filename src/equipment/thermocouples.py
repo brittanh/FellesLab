@@ -9,7 +9,7 @@ ooooooooooo        oooo oooo                     ooooo                .o8
  888     888    .o  888  888  888    .o o.  )88b  888     o d8(  888  888   888 
 o888o    `Y8bod8P' o888oo888o `Y8bod8P' 8""888P' o888ooood8 `Y888""8o `Y8bod8P' 
 
-@summary       Valves
+@summary       Thermocouple
 @author:       Sigve Karolius
 @organization  Department of Chemical Engineering, NTNU, Norway
 @contact       sigve.karolius@ntnu.no

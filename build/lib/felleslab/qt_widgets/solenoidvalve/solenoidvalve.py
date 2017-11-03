@@ -46,7 +46,7 @@ valve_void   = ":icons/valves/48x48_solenoid.png"
 # Valve Widget -------------------------------------------------------------- #
 class QFellesSolenoidValve(QFellesWidgetBaseClass):
     """
-    @brief     Widget representing a sol
+    @brief     Widget representing a solenoid valve
     """
     valveOpened  = pyqtSignal()
     valveClosed  = pyqtSignal()
