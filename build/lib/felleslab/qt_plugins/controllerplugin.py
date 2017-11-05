@@ -31,7 +31,7 @@ from felleslab.qt_widgets.controller import QFellesController
 from felleslab.icons import *
 
 # Name of the Icon used for the widget
-my_widget_icon  = ':/icons/thermocouples/16x16_thumbnail.png'
+my_widget_icon  = ':/icons/instruments/16x16_thumbnail.png'
 my_widget_name  = "QFellesController"
 my_widget_group = "QtFellesLabWidgets"
 my_widget_module = 'felleslab.qt_widgets.controller'
@@ -95,7 +95,7 @@ class PyControllerPlugin(QPyDesignerCustomWidgetPlugin):
                ' <property name="channel">\n' \
                '  <number>0</number>\n' \
                ' </property>\n' \
-               '</widget>\n' %(my_widget_name,"Valve")
+               '</widget>\n' %(my_widget_name,"Controller")
 
     def includeFile(self):
         """ Returns the module containing the custom widget class """

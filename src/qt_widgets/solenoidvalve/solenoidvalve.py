@@ -159,7 +159,7 @@ class QFellesSolenoidValve(QFellesWidgetBaseClass):
 # ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: #
 if __name__ == '__main__':
 
-    from FellesLab import run_gui
+    from felleslab import run_gui
 
 
     class Ui_MainWindow(object):
