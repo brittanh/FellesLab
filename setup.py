@@ -11,12 +11,14 @@ args = {
     'version'       : '0.1.0',
     'packages'      : ['felleslab',
                        'felleslab.communication',
+                       'felleslab.core',
                        'felleslab.equipment',
                        'felleslab.icons',
                        'felleslab.qt_plugins',
                        'felleslab.qt_widgets',
                        'felleslab.qt_widgets.thermocouple',
                        'felleslab.qt_widgets.solenoidvalve',
+                       'felleslab.qt_widgets.controller'
                       ],
     'package_dir'  : {'felleslab': 'src'},
     'package_data' : {

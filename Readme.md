@@ -33,9 +33,24 @@ Yb,         ,dP 88    888   .o 88  88 888   .oo.  )88b  88    od8(  88 888  888
              \/                                                \/
 ```
 
+
+# About
+
+The framework is based on [PyQt][PyQt reference].
+
+
+[PyQt reference]: http://pyqt.sourceforge.net/Docs/PyQt4/
+
+```bash
+export PYQTDESIGNERPATH="<path>"
+```
+
+
 # Install
 
+
 ## Dependencies
+
 
 ### Ubuntu (Linux)
 
@@ -53,6 +68,22 @@ sudo port install qt4-mac qt4-creator-mac py27-pyqt4 py27-pip py27-serial
 sudo pip install minimalmodbus
 ```
 
+#### Homebrew
+
+... not tested
+
+#### Serial to USB Communication 
+
+[Website]
+
+
+[website]: https://pbxbook.com/other/mac-tty.html
+
+Most serial-to-USB adapters  require a driver to be installed before working on OS X.
+
+Recommended to try [Prolific PL2303](http://www.prolific.com.tw/US/ShowProduct.aspx?p_id=229&pcid=41) 
+driver  first and if that does not work try [Silicon Labs](https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers).
+
 
 ## Install Procedure
 
@@ -61,5 +92,19 @@ python setup.py build
 python setup.py install --prefix="${HOME}"
 ```
 
+## Further Instructions 
 
+You need to add the module to your Python path before it can be imported into Python:
 
+```
+export PYTHONPATH=${HOME}/lib/python2.7/site-packages/
+```
+
+If you wish to make changes to the GUI using the custom icons, you must add the plugins to the Qt Designer path:
+
+```
+export PYQTDESIGNERPATH=${PYTHONPATH}/felleslab/qt_plugins
+```
+This will import the custom icons into the Qt Designer for use.
+
+The new GUI must then be translated into Python code using ```py4uic``` before it can be used.
