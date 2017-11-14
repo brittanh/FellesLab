@@ -37,7 +37,7 @@ class QFellesController(QFellesWidgetBaseClass):
     derivative = pyqtSignal(float)
     MV_sp = pyqtSignal(float)
     CV_sp = pyqtSignal(float)
-
+    controller_state = pyqtSignal(str)
 
     def initUi(self, parent=None):
         """ Generates the user interface """
@@ -148,10 +148,12 @@ class QFellesController(QFellesWidgetBaseClass):
         if self.on.isChecked() == True:
             self.setpoint.setHidden(False)
             self.MV_manual.setHidden(True)
+            self.controller_state.emit('On')
             #print "Controller is on"
         else:
             self.setpoint.setHidden(True)
             self.MV_manual.setHidden(False)
+            self.controller_state.emit('Off')
             #print "Controller is off"
 
     @pyqtSlot()
