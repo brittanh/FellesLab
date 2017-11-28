@@ -50,7 +50,7 @@ export PYQTDESIGNERPATH="<path>"
 
 
 ## Dependencies
-
+[Pyqtgraph](http://www.pyqtgraph.org/) 
 
 ### Ubuntu (Linux)
 
@@ -75,7 +75,6 @@ sudo pip install minimalmodbus
 #### Serial to USB Communication 
 
 [Website]
-
 
 [website]: https://pbxbook.com/other/mac-tty.html
 

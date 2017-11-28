@@ -23,19 +23,19 @@ o888o     `Y8bod8P'o888oo888o`Y8bod8P'8""888P'  o888ooooood8`Y888""8o `Y8bod8P'
 
 from PyQt4.QtGui import (QPushButton, QWidget, QIcon, QApplication, QPixmap,
                          QHBoxLayout, QVBoxLayout, QMainWindow, QMenuBar,
-                         QStatusBar, QLabel, QIcon)
+                         QStatusBar, QLabel, QIcon, QSizePolicy)
 from PyQt4.QtCore import (QCoreApplication, pyqtSlot, pyqtSignal)
-from felleslab.core import QFellesWidgetBaseClass
 from felleslab import icons
+from felleslab.core import QFellesWidgetBaseClass
 
-# Thermocouple Widget ------------------------------------------------------- #
+
+#Button Widget ------------------------------------------------------------- #
 class QFellesButtons(QFellesWidgetBaseClass):
     """
-    @brief     Widget
+    @brief     Button Widget
     """
-    Start = pyqtSignal(int)
-    Stop = pyqtSignal(int)
-    Pause = pyqtSignal(int)
+
+    btn_state = pyqtSignal(str)
     
     def initUi(self, parent=None):
         """ Generates the user interface """
@@ -48,10 +48,13 @@ class QFellesButtons(QFellesWidgetBaseClass):
         #Defining Buttons
         self.StartButton = QPushButton("Start")
         self.StartButton.setObjectName('Start')
+        self.StartButton.setSizePolicy(QSizePolicy.Expanding,QSizePolicy.Preferred)
         self.PauseButton= QPushButton("Pause")
         self.PauseButton.setObjectName('Pause')
+        self.PauseButton.setSizePolicy(QSizePolicy.Expanding,QSizePolicy.Preferred)
         self.StopButton = QPushButton("Stop")
         self.StopButton.setObjectName('Stop')
+        self.StopButton.setSizePolicy(QSizePolicy.Expanding,QSizePolicy.Preferred)
         
         #Button icons
         icon_start = QIcon()
@@ -88,7 +91,7 @@ class QFellesButtons(QFellesWidgetBaseClass):
     
         #Defining Layout
         hbox = QHBoxLayout()
-        hbox.addStretch(1)
+        #hbox.addStretch(1)
         hbox.addWidget(self.StartButton)
         hbox.addWidget(self.PauseButton)
         hbox.addWidget(self.StopButton)
@@ -104,7 +107,7 @@ class QFellesButtons(QFellesWidgetBaseClass):
     def state(self, value):
         """
             TODO: possible state values: 0, 1, 2. CHECK!
-            """
+        """
         self._state = value
     
     @pyqtSlot()
@@ -113,22 +116,22 @@ class QFellesButtons(QFellesWidgetBaseClass):
         btn_name = str(sending_button.objectName())
         if btn_name == 'Start':
             old_state = self.state
-            self.state = 1                          #Changing state to sampling
-            self.Start.emit(self.state)                     #Emitting new state
+            self.state = '1'                        #Changing state to sampling
+            self.btn_state.emit(self.state)                 #Emitting new state
             self.StartButton.setDisabled(True)
             self.PauseButton.setEnabled(True)
             self.StopButton.setEnabled(True)
         elif btn_name == 'Pause':
             old_state = self.state
-            self.state = 2                            #Changing state to paused
-            self.Pause.emit(self.state)                     #Emitting new state
+            self.state = '2'                          #Changing state to paused
+            self.btn_state.emit(self.state)                 #Emitting new state
             self.StartButton.setEnabled(True)
             self.PauseButton.setDisabled(True)
             self.StopButton.setEnabled(True)
         elif btn_name == 'Stop':
             old_state = self.state
-            self.state = 0                              #Changing state to idle
-            self.Stop.emit(self.state)                      #Emitting new state
+            self.state = '0'                             #Changing state to idle
+            self.bnt_state.emit(self.state)                 #Emitting new state
             self.StartButton.setEnabled(True)
             self.PauseButton.setDisabled(True)
             self.StopButton.setDisabled(True)

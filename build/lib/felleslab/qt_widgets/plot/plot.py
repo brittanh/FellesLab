@@ -1,0 +1,161 @@
+#!/usr/bin/python
+# -*- coding: ascii -*-
+"""
+   oooooooooooo       oooo oooo                    ooooo                 .o8
+   `888'     `8       `888 `888                    `888'                "888
+    888       .ooooo.  888  888  .ooooo.  .oooo.o   888         .oooo.   888oooo.
+    888oooo8 d88' `88b 888  888 d88' `88bd88(  "8   888        `P  )88b  d88' `88b
+    888    " 888ooo888 888  888 888ooo888`"Y88b.    888         .oP"888  888   888
+    888      888    .o 888  888 888    .oo.  )88b   888       od8(  888  888   888
+   o888o     `Y8bod8P'o888oo888o`Y8bod8P'8""888P'  o888ooooood8`Y888""8o `Y8bod8P'
+
+    @summary
+    @author        Brittany Hall
+    @organization  Department of Chemical Engineering, NTNU, Norway
+    @contact       brittanh@stud.ntnu.no
+    @license       Free (GPL.v3) !!! Distributed as-is !!!
+    @requires      Python 2.7.x or higher
+    @since         2017-11-01
+    @version       0.1
+    
+"""
+import sys
+from PyQt4.QtGui import (QGroupBox, QLabel, QDoubleSpinBox, QGridLayout, QHBoxLayout,
+                         QApplication, QWidget, QMainWindow, QVBoxLayout,
+                         QRadioButton, QSlider, QMenuBar, QStatusBar)
+from PyQt4.QtCore import (pyqtSignal, pyqtSlot, Qt, QTimer)
+from felleslab.core import QFellesWidgetBaseClass
+import numpy as np
+import pyqtgraph as pg
+import datetime
+
+#Controller Widget -----------------------------------------------------------#
+class QFellesPlot(QFellesWidgetBaseClass):
+    """
+    @brief: Widget that plots in real time
+    """
+
+    def initUi(self, parent=None):
+        """ Generates the user interface """
+        #Update widget meta data
+        self.meta["type"] = "Plot"
+        self.meta["name"] = "foobar"
+        self.meta["unit"] = "--"
+        
+        #Plot properties
+        pg.setConfigOption('background','w')
+        pg.setConfigOption('foreground', 'k')
+        labelStyle = {'color': 'k', 'font-size': '16px'}
+        
+        #Temperature plot widget:
+        self.tempPlt = pg.PlotWidget(self)
+        self.tempPlt.setTitle('Controlled Variable',size='16px')
+        self.tempPlt.setLabel('left', 'Temperature', units='C', **labelStyle)
+        self.tempPlt.setLabel('bottom', 'Time', units='s', **labelStyle)
+        self.tempPlt.move(200,50)
+        self.tempPlt.resize(450,200)
+
+        self.timer3 = pg.QtCore.QTimer()
+        self.timer3.timeout.connect(self.cUpdate)
+        self.timer3.start(200)
+        
+        
+        #Valve 1 plot widget:
+        self.valve1Plt = pg.PlotWidget(self)
+        self.valve1Plt.setTitle('Manipulated Variable 1', size='16px')
+        self.valve1Plt.setLabel('left', 'Valve Position', units='%', **labelStyle)
+        self.valve1Plt.setLabel('bottom', 'Time', units='s', **labelStyle)
+        self.valve1Plt.move(200,550)
+        self.valve1Plt.resize(450,200)
+
+        self.timer3 = pg.QtCore.QTimer()
+        self.timer3.timeout.connect(self.cUpdate)
+        self.timer3.start(200)
+        
+        #Valve 2 plot widget:
+        self.valve2Plt = pg.PlotWidget(self)
+        self.valve2Plt.setTitle('Manipulated Variable 2', size='16px')
+        self.valve2Plt.setLabel('left', 'Valve Position', units='%', **labelStyle)
+        self.valve2Plt.setLabel('bottom', 'Time', units='s', **labelStyle)
+        self.valve2Plt.move(200,300)
+        self.valve2Plt.resize(450,200)
+
+        self.timer3 = pg.QtCore.QTimer()
+        self.timer3.timeout.connect(self.cUpdate)
+        self.timer3.start(200)
+        
+        #Defining Layout
+        hbox = QVBoxLayout()
+        #hbox.addStretch(1)
+        hbox.addWidget(self.tempPlt)
+        hbox.addWidget(self.valve1Plt)
+        hbox.addWidget(self.valve2Plt)
+        self.setLayout(hbox)
+
+    @pyqtSlot()
+    def cUpdate(self):
+        now = datetime.datetime.now()
+        s = np.array([now.second])
+        if self.newSample == '0' or self.newSample == '1':
+            if self.newSample == '0':
+                valvepos = 0
+            else:
+                valvepos = 100
+        else:
+            temp = float(self.newSample)
+        self.tempPlt.plot(s,temp,pen=None, symbol='o')
+        #need to distinguish between valves
+        self.valve1Plt.plot(s,valvepos,pen=None, symbol='-')
+        self.valve2Plt.plot(s,valvepos,pen=None, symbol='-')
+
+    def closeEvent(self, event=None):
+        print("Shutting down %s" %self.__class__.__name__)
+        self.onQuit()
+
+# ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::#
+if __name__ == '__main__':
+    from PyQt4.QtGui import QApplication
+    from felleslab import run_gui
+    
+    try:
+        _encoding = QApplication.UnicodeUTF8
+        def _translate(context, text, disambig):
+            return QApplication.translate(context, text, disambig, _encoding)
+    except AttributeError:
+        def _translate(context, text, disambig):
+            return QApplication.translate(context, text, disambig)
+
+    class Ui_MainWindow(object):
+        """ This code is normally generated by Qt Designer """
+        
+        def setupUi(self, MainWindow):
+            """
+            """
+            MainWindow.resize(100,200)
+            #Create central widget and add a Layout
+            self.centralwidget = QWidget(MainWindow)
+            MainWindow.setCentralWidget(self.centralwidget)
+            self.verticalLayout= QVBoxLayout(self.centralwidget)
+            
+            # Add a Temperature sensor and Label Widgets
+            self.t1 = QFellesPlot(self.centralwidget)
+
+            # Add Widgets to Layout
+            self.verticalLayout.addWidget(self.t1)
+            
+            # Create the Menu bar
+            self.menubar = QMenuBar(MainWindow)
+            MainWindow.setMenuBar(self.menubar)
+            # Create the Status Bar
+            self.statusbar = QStatusBar(MainWindow)
+            MainWindow.setStatusBar(self.statusbar)
+                
+            self.retranslateUi(MainWindow)
+                
+        def retranslateUi(self, MainWindow):
+            """
+            """
+            pass
+    
+    run_gui(Ui_MainWindow)
+

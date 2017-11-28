@@ -18,5 +18,4 @@ o888o     `Y8bod8P'o888oo888o`Y8bod8P'8""888P'  o888ooooood8`Y888""8o `Y8bod8P'
 
 """
 
-import thermocouple, solenoidvalve, controller, buttons
-
+import thermocouple, solenoidvalve, controller, buttons, plot

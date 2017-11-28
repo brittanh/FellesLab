@@ -91,12 +91,13 @@ class QFellesController(QFellesWidgetBaseClass):
         #On-Off Buttons
         self.on = QRadioButton("Controller On")
         self.on.setChecked(False)               #Default to have controller off
-        self.on.toggled.connect(self.btnstate)
+        self.on.toggled.connect(self.controllerstate)
         
         #Slider
+       
         self.MV_manual = QSlider(Qt.Horizontal)
         self.MV_manual_label = QLabel('MV Setpoint')
-        self.MV_manual.sliderReleased.connect(self.mv_state)
+        self.MV_manual.sliderReleased.connect(self.MVSetPoint)
         #self.MV_manual.setRange(minimum, maximum)
         
         #Layout
@@ -123,7 +124,13 @@ class QFellesController(QFellesWidgetBaseClass):
     def CVSetPoint(self, event=None):
         self.setpoint_value = self.setpoint.value()
         self.CV_sp.emit(self.setpoint_value)
-    #print self.setpoint_value
+        #print self.setpoint_value
+    
+    @pyqtSlot()
+    def MVSetPoint(self, event=None):
+        MV_setpoint = self.MV_manual.value()
+        self.MV_sp.emit(MV_setpoint)
+        #print MV_setpoint
     
     @pyqtSlot()
     def controllersettings(self, event=None):
@@ -131,20 +138,20 @@ class QFellesController(QFellesWidgetBaseClass):
             self.GAIN_0 = self.gain.value()
             self.gain_value = self.gain.value()
             self.proportional.emit(self.gain_value)        #Emitting Gain value
-        #print self.gain_value
+            #print self.gain_value
         elif self.taui.value() != self.TAUI_0:
             self.TAUI_0 = self.taui.value()
             self.taui_value = self.taui.value()
             self.integral.emit(self.taui_value)
-        #print self.taui_value
+            #print self.taui_value
         elif self.taud.value() != self.TAUD_0:
             self.TAUD_0 = self.taud.value()
             self.taud_value = self.taud.value()
             self.derivative.emit(self.taud_value)
-    #print self.taud_value
+            #print self.taud_value
 
     @pyqtSlot()
-    def btnstate(self, event=None):
+    def controllerstate(self, event=None):
         if self.on.isChecked() == True:
             self.setpoint.setHidden(False)
             self.MV_manual.setHidden(True)
@@ -155,12 +162,6 @@ class QFellesController(QFellesWidgetBaseClass):
             self.MV_manual.setHidden(False)
             self.controller_state.emit('Off')
             #print "Controller is off"
-
-    @pyqtSlot()
-    def mv_state(self, event=None):
-        MV_setpoint = self.MV_manual.value()
-        self.MV_sp.emit(MV_setpoint)
-        #print MV_setpoint
 
     def closeEvent(self, event=None):
         print("Shutting down %s" %self.__class__.__name__)

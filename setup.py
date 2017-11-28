@@ -19,7 +19,8 @@ args = {
                        'felleslab.qt_widgets.thermocouple',
                        'felleslab.qt_widgets.solenoidvalve',
                        'felleslab.qt_widgets.controller',
-                       'felleslab.qt_widgets.buttons'
+                       'felleslab.qt_widgets.buttons',
+                       'felleslab.qt_widgets.plot'
                       ],
     'package_dir'  : {'felleslab': 'src'},
     'package_data' : {
